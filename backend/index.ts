@@ -258,6 +258,54 @@ app
         roles: t.Array(t.String()),
       }),
     }
+  )
+
+  .post(
+    "/register-public",
+    async ({ body, set }) => {
+      const { name, email, password, contact, start_date } = body;
+
+      // Tu dois utiliser un service avec privilèges admin :
+      const { data, error } = await supabase.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: { name, role: "client" },
+      });
+
+      if (error || !data?.user?.id) {
+        set.status = 400;
+        return {
+          success: false,
+          error: error?.message ?? "Failed to create user",
+        };
+      }
+
+      const userId = data.user.id;
+
+      // Insertion dans la table client
+      const insert = await supabase.from("client").insert({
+        id: userId,
+        contact,
+        start_date,
+      });
+
+      if (insert.error) {
+        set.status = 500;
+        return { success: false, error: insert.error.message };
+      }
+
+      return { success: true, user_id: userId };
+    },
+    {
+      body: t.Object({
+        name: t.String(),
+        email: t.String(),
+        password: t.String(),
+        contact: t.String(),
+        start_date: t.String(), // ISO string de date
+      }),
+    }
   );
 
 app.listen(3000, () => {

@@ -20,14 +20,27 @@ abstract class BaseService<T extends AuthModel> {
     }
   }
 
-  Future<AuthResponse?> signUp(String email, String password) async {
-    try {
-      return await client.auth.signUp(email: email, password: password);
-    } catch (e) {
-      print("❌ signUp failed: $e");
-      rethrow; // Re-throw to handle specific errors in the UI
-    }
+  Future<AuthResponse?> signUp({
+  required String name,
+  required String email,
+  required String password,
+}) async {
+  try {
+    final response = await client.auth.signUp(
+      email: email,
+      password: password,
+      data: {
+        'name': name,
+      },
+    );
+    return response;
+  } catch (e) {
+    print("❌ signUp failed: $e");
+    rethrow;
   }
+}
+
+
 
   Future<void> signOut() async {
     await client.auth.signOut();

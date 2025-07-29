@@ -1,6 +1,7 @@
 import 'package:app_gest_lavage/presentation/pages/client/accueil_page.dart';
 import 'package:app_gest_lavage/presentation/pages/client/profile_page.dart';
 import 'package:app_gest_lavage/presentation/pages/client/reservations_page.dart';
+import 'package:app_gest_lavage/presentation/providers/auth_controller.dart';
 import 'package:flutter/material.dart';
 
 class ClientHomePage extends StatefulWidget {
@@ -25,10 +26,30 @@ class _ClientHomePageState extends State<ClientHomePage> {
     BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
   ];
 
+  void _logout(BuildContext context) async {
+    await AuthController().service.signOut();
+    Navigator.pushReplacementNamed(context, '/login');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Espace Client")),
+      appBar: AppBar(title: const Text("Espace Client"),
+        actions: [
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'logout') _logout(context);
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'logout',
+                child: Text('Déconnexion'),
+              ),
+            ],
+            icon: const Icon(Icons.account_circle),
+          )
+        ],
+        ),
       body: _pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,

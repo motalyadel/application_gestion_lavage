@@ -22,7 +22,6 @@ class AppColors {
   static const Color textSecondary = Color.fromARGB(255, 117, 117, 117);
 }
 
-
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -34,8 +33,7 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-    final ClientService _authService = ClientService();
-
+  final ClientService _authService = ClientService();
 
   // bool _passwordVisible = false;
   bool _isLoading = false;
@@ -83,7 +81,8 @@ class _LoginPageState extends State<LoginPage> {
 
       if (user == null) {
         setState(() {
-          _error = 'Impossible de récupérer les informations de l\'utilisateur.';
+          _error =
+              'Impossible de récupérer les informations de l\'utilisateur.';
         });
         return;
       }
@@ -92,7 +91,8 @@ class _LoginPageState extends State<LoginPage> {
     } catch (e) {
       setState(() {
         if (e.toString().contains('Email not confirmed')) {
-          _error = 'Veuillez confirmer votre adresse e-mail pour vous connecter.';
+          _error =
+              'Veuillez confirmer votre adresse e-mail pour vous connecter.';
         } else if (e.toString().contains('Invalid login credentials')) {
           _error = 'E-mail ou mot de passe incorrect.';
         } else {
@@ -108,70 +108,145 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-          backgroundColor: AppColors.surface,
-          elevation: 0,
-          actions: [
-            IconButton(
-              icon: Icon(
-                Icons.language,
-                color: AppColors.primary,
-              ),
-              onPressed: () {
-                final provider =
-                    Provider.of<LocaleProvider>(context, listen: false);
-                final currentLocale = provider.locale;
-                final newLocale = currentLocale.languageCode == 'en'
-                    ? const Locale('ar')
-                    : const Locale('en');
-                provider.changeLocale(newLocale);
-              },
-              tooltip: 'Change Language',
-            ),
-          ],
-        ),
+        backgroundColor: AppColors.surface,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.language, color: AppColors.primary),
+            onPressed: () {
+              final provider =
+                  Provider.of<LocaleProvider>(context, listen: false);
+              final currentLocale = provider.locale;
+              final newLocale = currentLocale.languageCode == 'en'
+                  ? const Locale('fr')
+                  : const Locale('en');
+              provider.changeLocale(newLocale);
+            },
+            tooltip: 'Changer la langue',
+          ),
+        ],
+      ),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final isMobile = constraints.maxWidth < 600;
           return Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(24),
               child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: isMobile ? 400 : 600),
+                constraints: BoxConstraints(maxWidth: isMobile ? 400 : 500),
                 child: Form(
                   key: _formKey,
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text("Connexion", style: Theme.of(context).textTheme.headlineSmall),
-                      const SizedBox(height: 24),
+                      // Logo ou icône
+                      const Icon(Icons.local_car_wash,
+                          size: 64, color: AppColors.primary),
+                      const SizedBox(height: 16),
+
+                      // Titre principal
+                      Text(
+                        "Connexion",
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.headlineMedium!.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+
+                      // Email
                       TextFormField(
                         controller: _emailController,
-                        decoration: InputDecoration(labelText: AppLocalizations.of(context)!.email),
-                        validator: (value) => value != null && value.contains('@')
-                            ? null
-                            : 'Email invalide',
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(context)!.email,
+                          prefixIcon: const Icon(Icons.email),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: AppColors.surface,
+                        ),
+                        validator: (value) =>
+                            value != null && value.contains('@')
+                                ? null
+                                : 'Email invalide',
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
+
+                      // Mot de passe
                       TextFormField(
                         controller: _passwordController,
-                        decoration: InputDecoration(labelText: AppLocalizations.of(context)!.password),
                         obscureText: true,
-                        validator: (value) =>
-                            value != null && value.length >= 6
-                                ? null
-                                : 'Mot de passe trop court',
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(context)!.password,
+                          prefixIcon: const Icon(Icons.lock),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: AppColors.surface,
+                        ),
+                        validator: (value) => value != null && value.length >= 6
+                            ? null
+                            : 'Mot de passe trop court',
                       ),
+
                       if (_error != null) ...[
                         const SizedBox(height: 16),
-                        Text(_error!,
-                            style: TextStyle(color: Colors.red)),
+                        Text(
+                          _error!,
+                          style: const TextStyle(color: AppColors.error),
+                          textAlign: TextAlign.center,
+                        ),
                       ],
-                      const SizedBox(height: 24),
-                      _isLoading
-                          ? CircularProgressIndicator()
-                          : ElevatedButton(
-                              onPressed: _login, child: Text("Se connecter")),
+
+                      const SizedBox(height: 32),
+
+                      // Bouton de connexion
+                      SizedBox(
+                        height: 50,
+                        child: _isLoading
+                            ? const Center(child: CircularProgressIndicator())
+                            : ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                onPressed: _login,
+                                child: Text("Se connecter",
+                                    style: theme.textTheme.titleMedium!
+                                        .copyWith(color: Colors.white)),
+                              ),
+                      ),
+
+                      const SizedBox(height: 12),
+                      TextButton(
+                        onPressed: () {
+                          // Ajouter une navigation vers un écran "mot de passe oublié" ?
+                        },
+                        child: const Text(
+                          "Mot de passe oublié ?",
+                          style: TextStyle(color: AppColors.primary),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      TextButton(
+                        onPressed: () =>
+                            AppNavigator.pushReplacement('/signup'),
+                        child: const Text("Vous avez pas un compte ? signUp"),
+                      ),
                     ],
                   ),
                 ),

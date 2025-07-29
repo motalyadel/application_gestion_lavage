@@ -10,10 +10,10 @@ class ClientService extends BaseService<AuthModel> {
     final accessToken = session?.accessToken;
     apiFetcher = ApiFetcher(accessToken: accessToken);
   }
-  
-  Future<List<Client>> getAllEmployees() async {
+
+  Future<List<Client>> getAllClients() async {
     try {
-      print('Fetching all employees...');
+      print('Fetching all Clients...');
       final roleResponse = await client
           .from('user_roles')
           .select('user_id')
@@ -103,5 +103,35 @@ class ClientService extends BaseService<AuthModel> {
       return null;
     }
   }
+
+  Future<bool> registerAndConfirmClient({
+  required String name,
+  required String email,
+  required String password,
+  required String contact,
+  required String startDate,
+}) async {
+  try {
+    final response = await apiFetcher.post('/register-public', body: {
+  'name': name,
+  'email': email,
+  'password': password,
+  'contact': contact,
+  'start_date': startDate,
+});
+
+if (response.isSuccess && response.data is Map && response.data['success'] == true) {
+  print('✅ Utilisateur inscrit via API admin');
+  return true;
+} else {
+  print("❌ Erreur backend: ${response.error ?? response.data}");
+  return false;
+}
+
+  } catch (e) {
+    print('❌ registerAndConfirmClient() failed: $e');
+    return false;
+  }
+}
 
 }

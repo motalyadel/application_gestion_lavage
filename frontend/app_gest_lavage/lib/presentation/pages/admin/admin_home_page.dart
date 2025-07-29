@@ -1,6 +1,7 @@
 import 'package:app_gest_lavage/presentation/pages/admin/dashboard_page.dart';
 import 'package:app_gest_lavage/presentation/pages/admin/manage_users_page.dart';
 import 'package:app_gest_lavage/presentation/pages/admin/settings_page.dart';
+import 'package:app_gest_lavage/presentation/providers/auth_controller.dart';
 import 'package:flutter/material.dart';
 
 class AdminHomePage extends StatefulWidget {
@@ -25,10 +26,30 @@ class _AdminHomePageState extends State<AdminHomePage> {
     BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Paramètres'),
   ];
 
+  void _logout(BuildContext context) async {
+    await AuthController().service.signOut();
+    Navigator.pushReplacementNamed(context, '/login');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Espace Admin")),
+      appBar: AppBar(title: const Text("Espace Admin"),
+        actions: [
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'logout') _logout(context);
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'logout',
+                child: Text('Déconnexion'),
+              ),
+            ],
+            icon: const Icon(Icons.account_circle),
+          )
+        ],
+        ),
       body: _pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,

@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 import 'package:dio/dio.dart' show Dio;
 import 'package:dio/io.dart';
@@ -39,7 +38,8 @@ class ApiFetcher {
     }
   }
 
-  Future<FetcherResponse> post(String path, Map<String, dynamic> body) async {
+  Future<FetcherResponse> post(String path,
+      {required Map<String, dynamic> body}) async {
     final dio = Dio();
     dio
       ..httpClientAdapter = IOHttpClientAdapter()

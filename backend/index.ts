@@ -264,14 +264,16 @@ app
     "/register-public",
     async ({ body, set }) => {
       const { name, email, password, contact, start_date } = body;
-
+      console.log("📥 Données reçues:", body);
       // Tu dois utiliser un service avec privilèges admin :
       const { data, error } = await supabase.auth.admin.createUser({
         email,
         password,
         email_confirm: true,
-        user_metadata: { name, role: "client" },
+        user_metadata: { name, roles: ["client"] },
       });
+
+      console.log(" Résultat création user :", data);
 
       if (error || !data?.user?.id) {
         set.status = 400;
@@ -280,7 +282,6 @@ app
           error: error?.message ?? "Failed to create user",
         };
       }
-
       const userId = data.user.id;
 
       // Insertion dans la table client

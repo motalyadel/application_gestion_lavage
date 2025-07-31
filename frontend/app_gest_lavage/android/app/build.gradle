@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.example.app_gest_lavage"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 35
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

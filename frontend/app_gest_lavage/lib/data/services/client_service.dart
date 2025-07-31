@@ -109,7 +109,7 @@ class ClientService extends BaseService<AuthModel> {
   required String email,
   required String password,
   required String contact,
-  required String startDate,
+  required String start_date,
 }) async {
   try {
     final response = await apiFetcher.post('/register-public', body: {
@@ -117,7 +117,7 @@ class ClientService extends BaseService<AuthModel> {
   'email': email,
   'password': password,
   'contact': contact,
-  'start_date': startDate,
+  'start_date': start_date,
 });
 
 if (response.isSuccess && response.data is Map && response.data['success'] == true) {

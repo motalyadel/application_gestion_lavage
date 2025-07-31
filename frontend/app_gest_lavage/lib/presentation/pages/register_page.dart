@@ -39,7 +39,7 @@ class _RegisterPageState extends State<RegisterPage> {
         contact: _contactController.text.trim(),
         email: _emailController.text.trim(),
         password: _passwordController.text,
-        startDate: DateFormat('yyyy-MM-dd').format(DateTime.now()),
+        start_date: DateFormat('yyyy-MM-dd').format(DateTime.now()),
         // photoUrl: null,
       );
 

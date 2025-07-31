@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:dio/dio.dart' show Dio;
+import 'package:dio/dio.dart' show Dio, DioException;
 import 'package:dio/io.dart';
 
 class ApiFetcher {
@@ -30,12 +30,16 @@ class ApiFetcher {
         error: response.statusCode == 200 ? responseBody : null,
       );
     } catch (e) {
-      return FetcherResponse(
-        status: 0,
-        url: path,
-        error: e.toString(),
-      );
-    }
+  if (e is DioException && e.response != null) {
+    print('❌ Réponse avec erreur : ${e.response!.data}');
+  }
+  return FetcherResponse(
+    status: 0,
+    url: path,
+    error: e.toString(),
+  );
+}
+
   }
 
   Future<FetcherResponse> post(String path,

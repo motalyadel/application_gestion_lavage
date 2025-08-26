@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:cross_file/cross_file.dart' as cross_file; // Unified import
 import 'package:dio/dio.dart' show Dio, DioException;
 import 'package:dio/io.dart';
 
@@ -6,7 +7,7 @@ class ApiFetcher {
   final String baseUrl = "http://10.0.2.2:3000";
   String? accessToken;
   String? refreshToken;
-  ApiFetcher({this.accessToken, this.refreshToken});
+  ApiFetcher({this.accessToken, this.refreshToken, required String baseUrl});
   Future<FetcherResponse> get(String path) async {
     final dio = Dio();
     dio
@@ -30,33 +31,39 @@ class ApiFetcher {
         error: response.statusCode == 200 ? responseBody : null,
       );
     } catch (e) {
-  if (e is DioException && e.response != null) {
-    print('❌ Réponse avec erreur : ${e.response!.data}');
+      if (e is DioException && e.response != null) {
+        print('❌ Réponse avec erreur : ${e.response!.data}');
+      }
+      return FetcherResponse(
+        status: 0,
+        url: path,
+        error: e.toString(),
+      );
+    }
   }
-  return FetcherResponse(
-    status: 0,
-    url: path,
-    error: e.toString(),
-  );
-}
 
-  }
-
-  Future<FetcherResponse> post(String path,
-      {required Map<String, dynamic> body}) async {
-    final dio = Dio();
-    dio
+  Future<FetcherResponse> post(
+    String path, {
+    Map<String, dynamic>? body,
+    cross_file.XFile? file, // Explicitly use cross_file.XFile
+  }) async {
+    final dio = Dio()
       ..httpClientAdapter = IOHttpClientAdapter()
-      ..options.baseUrl = "http://10.0.2.2:3000"
+      ..options.baseUrl = baseUrl
       ..options.headers = {
         'Content-Type': 'application/json',
         if (accessToken != null) 'Authorization': 'Bearer $accessToken',
+        'ngrok-skip-browser-warning': 'aby',
       };
 
     try {
       print('Envoi de la requête à : ${dio.options.baseUrl}/$path');
       print('Corps de la requête : $body');
-      final response = await dio.post('/$path', data: body);
+
+      final response = await dio.post(
+        '/$path',
+        data: body != null ? jsonEncode(body) : null,
+      );
 
       print(
           'Received response: status ${response.statusCode}, body ${response.data}');

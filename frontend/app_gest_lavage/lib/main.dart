@@ -1,6 +1,8 @@
 import 'package:app_gest_lavage/core/utils/navigator.dart';
 import 'package:app_gest_lavage/l10n/generated/app_localizations.dart';
 import 'package:app_gest_lavage/presentation/pages/admin/admin_home_page.dart';
+import 'package:app_gest_lavage/presentation/pages/admin/manage_users_page.dart';
+import 'package:app_gest_lavage/presentation/pages/client/client_detail_page.dart';
 import 'package:app_gest_lavage/presentation/pages/client/client_home_page.dart';
 import 'package:app_gest_lavage/presentation/pages/login_page.dart';
 import 'package:app_gest_lavage/presentation/pages/register_page.dart';
@@ -54,6 +56,8 @@ class MyApp extends StatelessWidget {
           '/signup': (_) => const RegisterPage(),
           '/admin_home': (_) => const AdminHomePage(),
           '/client_home': (_) => const ClientHomePage(),
+          '/manage_users': (_) => const ManageUsersPage(),
+          '/client_detail': (_) => const ClientDetailPage(),
         },
       );
     });

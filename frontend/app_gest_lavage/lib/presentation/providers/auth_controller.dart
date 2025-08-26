@@ -90,4 +90,17 @@ class AuthController extends ChangeNotifier {
   }
 }
 
+Future<bool> canAccessClientList() async {
+    await getUser();
+    return _user != null && currentRole == 'admin';
+  }
+
+  Future<void> tryAccessClientList() async {
+    if (await canAccessClientList()) {
+      AppNavigator.push('/manage_users'); // Mise à jour pour pointer vers /manage_users
+    } else {
+      AppNavigator.pushReplacement('/login');
+    }
+  }
+
 }

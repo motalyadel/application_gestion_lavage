@@ -24,8 +24,7 @@ abstract class AuthModel {
 
 enum Status {
   active('Active'),
-  onLeave('On Leave'),
-  resigned('Resigned');
+  inactive('Inactive');
 
   final String value;
   const Status(this.value);
@@ -66,7 +65,7 @@ class Client extends AuthModel {
     return Client(
       id: map['id'] as String,
       name: map['name'] as String?,
-      status: map['status'] as String?,
+      status: map['status'] as String? ?? Status.active.value, // Default to "Active"
       contact: clientData['contact'] as String?,
       details: clientData['details'] as String?,
       photo: clientData['photo'] as String?,
@@ -149,6 +148,7 @@ class Admin extends AuthModel {
     );
   }
 }
+
 class AppRole {
   final String id;
 

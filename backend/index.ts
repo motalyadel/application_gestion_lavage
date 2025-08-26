@@ -263,51 +263,386 @@ app
   .post(
     "/register-public",
     async ({ body, set }) => {
-      const { name, email, password, contact, start_date } = body;
-      console.log("📥 Données reçues:", body);
-      // Tu dois utiliser un service avec privilèges admin :
-      const { data, error } = await supabase.auth.admin.createUser({
+      const {
+        name,
         email,
         password,
-        email_confirm: true,
-        user_metadata: { name, roles: ["client"] },
-      });
-
-      console.log(" Résultat création user :", data);
-
-      if (error || !data?.user?.id) {
-        set.status = 400;
-        return {
-          success: false,
-          error: error?.message ?? "Failed to create user",
-        };
-      }
-      const userId = data.user.id;
-
-      // Insertion dans la table client
-      const insert = await supabase.from("client").insert({
-        id: userId,
         contact,
         start_date,
-      });
+        status,
+        details,
+        photo,
+      } = body;
 
-      if (insert.error) {
+      try {
+        // Create user
+        const { data: createdUser, error } =
+          await supabase.auth.admin.createUser({
+            email,
+            password,
+            email_confirm: true,
+            user_metadata: { name, roles: ["client"], status },
+          });
+
+        if (error || !createdUser?.user?.id) {
+          set.status = 400;
+          return {
+            success: false,
+            error: error?.message ?? "Failed to create user",
+          };
+        }
+
+        const userId = createdUser.user.id;
+
+        // Handle photo upload if provided
+        let photoUrl = photo || null;
+        if (photo && typeof photo !== "string") {
+          const photoPath = `client/${userId}/${Date.now()}.jpg`;
+          const { error: uploadError } = await supabase.storage
+            .from("avatars")
+            .upload(photoPath, photo, {
+              contentType: photo.type,
+              upsert: true,
+            });
+
+          if (uploadError) {
+            set.status = 500;
+            return {
+              success: false,
+              error: "Failed to upload photo",
+              details: uploadError.message,
+            };
+          }
+
+          photoUrl = supabase.storage.from("avatars").getPublicUrl(photoPath)
+            .data.publicUrl;
+        }
+
+        // Insert into client table
+        const insert = await supabase.from("client").insert({
+          id: userId,
+          contact,
+          details,
+          photo: photoUrl,
+          start_date,
+        });
+
+        if (insert.error) {
+          set.status = 500;
+          return { success: false, error: insert.error.message };
+        }
+
+        // Update user metadata with photo URL
+        if (photoUrl) {
+          await supabase.auth.admin.updateUserById(userId, {
+            user_metadata: { name, roles: ["client"], status, photo: photoUrl },
+          });
+        }
+
+        return { success: true, user_id: userId };
+      } catch (e) {
+        console.error("Error in register-public:", e);
         set.status = 500;
-        return { success: false, error: insert.error.message };
+        return { success: false, error: "Internal server error" };
       }
-
-      return { success: true, user_id: userId };
     },
     {
+      // beforeHandle: isAdmin,
       body: t.Object({
         name: t.String(),
         email: t.String(),
         password: t.String(),
         contact: t.String(),
-        start_date: t.String(), // ISO string de date
+        start_date: t.String(),
+        status: t.Optional(t.String()),
+        details: t.Optional(t.String()),
+        photo: t.Optional(t.Union([t.File(), t.String()])),
+      }),
+    }
+  )
+
+  .post(
+    "/update-client",
+    async ({ body, set }) => {
+      const { id, name, status, contact, details, photo, start_date } = body;
+
+      try {
+        // Update user metadata using admin API
+        const metadata = {
+          name: name || undefined,
+          roles: ["client"],
+          status: status || "active",
+          ...(photo && { photo }), // Only include photo if provided
+        };
+        const { data: updatedUser, error: userError } =
+          await supabase.auth.admin.updateUserById(id, {
+            user_metadata: metadata, // Pass metadata as an object
+          });
+
+        if (userError) {
+          set.status = 400;
+          return { success: false, error: userError.message };
+        }
+        console.log(`Updated user metadata for ID: ${id}`);
+
+        // Handle photo (string URL or file)
+        let photoUrl = typeof photo === "string" ? photo : null;
+        if (photo && typeof photo !== "string") {
+          const photoPath = `client/${id}/${Date.now()}.jpg`;
+          const { error: uploadError } = await supabase.storage
+            .from("avatars")
+            .upload(photoPath, photo, {
+              contentType: photo.type,
+              upsert: true,
+            });
+
+          if (uploadError) {
+            set.status = 500;
+            return {
+              success: false,
+              error: "Failed to upload photo",
+              details: uploadError.message,
+            };
+          }
+
+          photoUrl = supabase.storage.from("avatars").getPublicUrl(photoPath)
+            .data.publicUrl;
+          console.log(`Uploaded photo: ${photoUrl}`);
+
+          // Update metadata with new photo URL
+          await supabase.auth.admin.updateUserById(id, {
+            user_metadata: { ...metadata, photo: photoUrl },
+          });
+        }
+
+        // Update client table
+        const updateData = {
+          ...(contact !== undefined && { contact }),
+          ...(details !== undefined && { details }),
+          ...(photoUrl !== null && { photo: photoUrl }),
+          ...(start_date !== undefined && { start_date }),
+        };
+
+        if (Object.keys(updateData).length > 0) {
+          const { error: clientError } = await supabase
+            .from("client")
+            .update(updateData)
+            .eq("id", id);
+
+          if (clientError) {
+            set.status = 500;
+            return { success: false, error: clientError.message };
+          }
+          console.log("Updated client table");
+        }
+
+        // Update users table (only name and status if provided)
+        const userUpdateData = {
+          ...(name !== undefined && { name }),
+          ...(status !== undefined && { status }),
+        };
+
+        if (Object.keys(userUpdateData).length > 0) {
+          const { error: usersError } = await supabase
+            .from("users")
+            .update(userUpdateData)
+            .eq("id", id);
+
+          if (usersError) {
+            set.status = 500;
+            return {
+              success: false,
+              error: "Failed to update users table",
+              details: usersError.message,
+            };
+          }
+          console.log("Updated users table");
+        }
+
+        return { success: true, user_id: id };
+      } catch (e) {
+        console.error("Error in update-client:", e);
+        set.status = 500;
+        return {
+          success: false,
+          error: "Internal server error",
+          details: "ERROR",
+        };
+      }
+    },
+    {
+      body: t.Object({
+        id: t.String(),
+        name: t.Optional(t.String()),
+        status: t.Optional(t.String()),
+        contact: t.Optional(t.String()),
+        details: t.Optional(t.String()),
+        photo: t.Optional(t.Union([t.File(), t.String()])),
+        start_date: t.Optional(t.String()),
+      }),
+    }
+  )
+  .post(
+    "/delete-client",
+    async ({ body, set }) => {
+      const { id } = body;
+
+      try {
+        // Delete from user_roles table first (to avoid foreign key constraints)
+        const { error: roleError } = await supabase
+          .from("user_roles")
+          .delete()
+          .eq("user_id", id);
+
+        if (roleError) {
+          set.status = 500;
+          return {
+            success: false,
+            error: "Failed to delete from user_roles",
+            details: roleError.message,
+          };
+        }
+        console.log("Deleted from user_roles");
+
+        // Delete from client table
+        const { error: clientError } = await supabase
+          .from("client")
+          .delete()
+          .eq("id", id);
+
+        if (clientError) {
+          set.status = 500;
+          return {
+            success: false,
+            error: "Failed to delete from client table",
+            details: clientError.message,
+          };
+        }
+        console.log("Deleted from client table");
+
+        // Delete from users table
+        const { error: usersError } = await supabase
+          .from("users")
+          .delete()
+          .eq("id", id);
+
+        if (usersError) {
+          set.status = 500;
+          return {
+            success: false,
+            error: "Failed to delete from users table",
+            details: usersError.message,
+          };
+        }
+        console.log("Deleted from users table");
+
+        // Delete from auth.users
+        const { error: userError } = await supabase.auth.admin.deleteUser(id);
+
+        if (userError) {
+          set.status = 500;
+          return {
+            success: false,
+            error: "Failed to delete auth user",
+            details: userError.message,
+          };
+        }
+        console.log("Deleted from auth.users");
+
+        return { success: true, user_id: id };
+      } catch (e) {
+        console.error("Error in delete-client:", e);
+        set.status = 500;
+        return { success: false, error: "Internal server error", details: e };
+      }
+    },
+    {
+      body: t.Object({
+        id: t.String(),
       }),
     }
   );
+
+//   // Update client (admin only)
+// .post(
+//   "/update-client",
+//   async ({ body, set }) => {
+//     const { id, name, status, contact, details, photo, start_date } = body;
+
+//     try {
+//       // Update user metadata
+//       const { data: updatedUser, error: userError } = await supabase.auth.admin.updateUserById(id, {
+//         user_metadata: { name, roles: ["client"], status },
+//       });
+
+//       if (userError) {
+//         set.status = 400;
+//         return { success: false, error: userError.message };
+//       }
+
+//       // Handle photo upload if provided
+//       let photoUrl = photo || null;
+//       if (photo && typeof photo !== 'string') {
+//         const photoPath = `client/${id}/${Date.now()}.jpg`;
+//         const { error: uploadError } = await supabase.storage
+//           .from("avatars")
+//           .upload(photoPath, photo, {
+//             contentType: photo.type,
+//             upsert: true,
+//           });
+
+//         if (uploadError) {
+//           set.status = 500;
+//           return { success: false, error: "Failed to upload photo", details: uploadError.message };
+//         }
+
+//         photoUrl = supabase.storage.from("avatars").getPublicUrl(photoPath).data.publicUrl;
+//       }
+
+//       // Update client table
+//       const { error: clientError } = await supabase
+//         .from("cleint")
+//         .update({
+//           contact,
+//           details,
+//           photo: photoUrl,
+//           start_date,
+//         })
+//         .eq('id', id);
+
+//       if (clientError) {
+//         set.status = 500;
+//         return { success: false, error: clientError.message };
+//       }
+
+//       // Update user metadata with photo URL if changed
+//       if (photoUrl) {
+//         await supabase.auth.admin.updateUserById(id, {
+//           user_metadata: { name, roles: ["client"], status, photo: photoUrl },
+//         });
+//       }
+
+//       return { success: true, user_id: id };
+//     } catch (e) {
+//       console.error("Error in update-client:", e);
+//       set.status = 500;
+//       return { success: false, error: "Internal server error"};
+//     }
+//   },
+//   {
+//     // beforeHandle: isAdmin,
+//     body: t.Object({
+//       id: t.String(),
+//       name: t.Optional(t.String()),
+//       status: t.Optional(t.String()),
+//       contact: t.Optional(t.String()),
+//       details: t.Optional(t.String()),
+//       photo: t.Optional(t.Union([t.File(), t.String()])),
+//       start_date: t.Optional(t.String()),
+//     }),
+//   }
+
+// );
 
 app.listen(3000, () => {
   console.log("✅ Server running on http://localhost:3000");

@@ -1,4 +1,5 @@
 import 'package:app_gest_lavage/data/models/auth_model.dart';
+import 'package:app_gest_lavage/presentation/pages/client/edit_client_page.dart';
 import 'package:app_gest_lavage/presentation/providers/auth_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -28,12 +29,12 @@ class ClientDetailPage extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: () {
-              Navigator.pushNamed(context, '/add_edit_client', arguments: client)
-                  .then((success) {
-                if (success == true) {
-                  Navigator.pop(context, true); // Rafraîchir la liste précédente
-                }
-              });
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => EditClientPage(client: client),
+                ),
+              );
             },
             tooltip: 'Modifier le client',
           ),

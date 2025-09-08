@@ -8,6 +8,7 @@ import 'package:app_gest_lavage/presentation/pages/login_page.dart';
 import 'package:app_gest_lavage/presentation/pages/register_page.dart';
 import 'package:app_gest_lavage/presentation/pages/splash_screen.dart';
 import 'package:app_gest_lavage/presentation/providers/auth_controller.dart';
+import 'package:app_gest_lavage/presentation/providers/client_management_controller.dart';
 import 'package:app_gest_lavage/presentation/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -24,6 +25,7 @@ void main() async {
 
   runApp(MultiProvider(providers: [
     ChangeNotifierProvider(create: (_) => LocaleProvider()),
+    ChangeNotifierProvider(create: (_) => ClientManagementController()),
     ChangeNotifierProvider.value(value: AuthController()),
   ], child: const MyApp()));
 }

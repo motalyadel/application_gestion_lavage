@@ -18,7 +18,7 @@ class AppColors {
   static const Color error = Color.fromARGB(255, 229, 57, 53);
   static const Color background = Color.fromARGB(255, 245, 245, 245);
   static const Color surface = Color.fromARGB(255, 255, 255, 255);
-  static const Color textPrimary = Color.fromARGB(255, 33, 33, 33);
+  static const Color textPrimary = Color.fromARGB(255, 67, 37, 37);
   static const Color textSecondary = Color.fromARGB(255, 117, 117, 117);
 }
 

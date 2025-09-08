@@ -60,12 +60,14 @@ class Client extends AuthModel {
     final roleList = List<Map<String, dynamic>>.from(map['roles'] ?? []);
     final roles =
         roleList.map((item) => AppRole.fromMap(item['app_role'])).toList();
-
     final clientData = map['client'] as Map<String, dynamic>? ?? {};
+    print('Client data from map: $clientData');
+    // final clientData = map['client'] as Map<String, dynamic>? ?? {};
     return Client(
       id: map['id'] as String,
       name: map['name'] as String?,
-      status: map['status'] as String? ?? Status.active.value, // Default to "Active"
+      status: map['status'] as String? ??
+          Status.active.value, // Default to "Active"
       contact: clientData['contact'] as String?,
       details: clientData['details'] as String?,
       photo: clientData['photo'] as String?,

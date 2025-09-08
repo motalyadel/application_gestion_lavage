@@ -15,7 +15,7 @@ class AuthController extends ChangeNotifier {
     return _instance!;
   }
 
-  final clientSp = Supabase.instance.client;
+  final clientSpb = Supabase.instance.client;
 
   BaseService? _service;
   AuthModel? _user;
@@ -31,7 +31,7 @@ class AuthController extends ChangeNotifier {
 
   Future<void> redirect() async {
     try {
-      final response = await clientSp.auth.getUser();
+      final response = await clientSpb.auth.getUser();
 
       if (response.user == null) {
         return AppNavigator.pushReplacement('/login');

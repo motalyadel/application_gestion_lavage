@@ -3,6 +3,7 @@ import 'package:app_gest_lavage/data/services/client_service.dart';
 import 'package:app_gest_lavage/presentation/pages/client/add_client_page.dart';
 import 'package:app_gest_lavage/presentation/pages/client/edit_client_page.dart';
 import 'package:app_gest_lavage/presentation/providers/auth_controller.dart';
+import 'package:app_gest_lavage/presentation/providers/client_management_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -14,17 +15,13 @@ class ManageUsersPage extends StatefulWidget {
 }
 
 class _ManageUsersPageState extends State<ManageUsersPage> {
-  late Future<List<Client>> _clientsFuture;
-
   @override
   void initState() {
     super.initState();
-    _clientsFuture = ClientService().getAllClients();
-  }
-
-  void _refreshClients() {
-    setState(() {
-      _clientsFuture = ClientService().getAllClients();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final controller =
+          Provider.of<ClientManagementController>(context, listen: false);
+      controller.loadClients();
     });
   }
 
@@ -33,7 +30,8 @@ class _ManageUsersPageState extends State<ManageUsersPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirmer la suppression'),
-        content: Text('Voulez-vous vraiment supprimer le client "$clientName"?'),
+        content:
+            Text('Voulez-vous vraiment supprimer le client "$clientName"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -49,17 +47,13 @@ class _ManageUsersPageState extends State<ManageUsersPage> {
 
     if (confirm != true) return;
 
+    final controller =
+        Provider.of<ClientManagementController>(context, listen: false);
     try {
-      final clientService = ClientService();
-      final success = await clientService.deleteClient(clientId);
-      if (success && mounted) {
+      await controller.deleteClient(clientId);
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Client "$clientName" supprimé avec succès')),
-        );
-        _refreshClients();
-      } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Échec de la suppression du client: ${success ? "Unknown error" : "API error"}')),
         );
       }
     } catch (e) {
@@ -74,6 +68,7 @@ class _ManageUsersPageState extends State<ManageUsersPage> {
   @override
   Widget build(BuildContext context) {
     final authController = Provider.of<AuthController>(context);
+    final controller = Provider.of<ClientManagementController>(context);
 
     if (authController.currentRole != 'admin') {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -91,168 +86,162 @@ class _ManageUsersPageState extends State<ManageUsersPage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: _refreshClients,
+            onPressed: () => controller.loadClients(),
             tooltip: 'Rafraîchir la liste',
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          print('Navigating to AddClientPage');
           final result = await Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const AddClientPage()),
           );
           if (result == true && mounted) {
-            print('Client added successfully, refreshing list');
-            _refreshClients();
+            controller.loadClients();
           }
         },
         backgroundColor: Colors.teal,
-        child: const Icon(Icons.add, color: Colors.white),
         tooltip: 'Ajouter un client',
+        child: const Icon(Icons.add, color: Colors.white),
       ),
-      body: FutureBuilder<List<Client>>(
-        future: _clientsFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: Colors.teal));
-          } else if (snapshot.hasError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, size: 50, color: Colors.red),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Erreur: ${snapshot.error}',
-                    style: const TextStyle(fontSize: 16, color: Colors.red),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: _refreshClients,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.teal,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+      body: controller.loading
+          ? const Center(child: CircularProgressIndicator(color: Colors.teal))
+          : controller.error != null
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error_outline,
+                          size: 50, color: Colors.red),
+                      const SizedBox(height: 16),
+                      Text(
+                        controller.error!,
+                        style: const TextStyle(fontSize: 16, color: Colors.red),
+                        textAlign: TextAlign.center,
                       ),
-                    ),
-                    child: const Text('Réessayer'),
-                  ),
-                ],
-              ),
-            );
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.info_outline, size: 50, color: Colors.grey),
-                  SizedBox(height: 16),
-                  Text(
-                    'Aucun client trouvé',
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          final clients = snapshot.data!;
-          return RefreshIndicator(
-            onRefresh: () async => _refreshClients(),
-            color: Colors.teal,
-            child: ListView.builder(
-              padding: const EdgeInsets.all(8),
-              itemCount: clients.length,
-              itemBuilder: (context, index) {
-                final client = clients[index];
-                return Card(
-                  elevation: 4,
-                  margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: ListTile(
-                    leading: client.photo != null
-                        ? CircleAvatar(
-                            radius: 25,
-                            backgroundImage: NetworkImage(client.photo!),
-                            onBackgroundImageError: (_, __) => const Icon(Icons.error),
-                          )
-                        : const CircleAvatar(
-                            radius: 25,
-                            backgroundColor: Colors.teal,
-                            child: Icon(Icons.person, size: 30, color: Colors.white),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () => controller.loadClients(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.teal,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                    title: Text(
-                      client.name ?? 'Sans nom',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                        ),
+                        child: const Text('Réessayer'),
+                      ),
+                    ],
+                  ),
+                )
+              : controller.clients.isEmpty
+                  ? const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.info_outline,
+                              size: 50, color: Colors.grey),
+                          SizedBox(height: 16),
+                          Text(
+                            'Aucun client trouvé',
+                            style: TextStyle(fontSize: 16, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    )
+                  : RefreshIndicator(
+                      onRefresh: () async => controller.loadClients(),
+                      color: Colors.teal,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(8),
+                        itemCount: controller.clients.length,
+                        itemBuilder: (context, index) {
+                          final client = controller.clients[index];
+                          return Card(
+                            elevation: 4,
+                            margin: const EdgeInsets.symmetric(
+                                vertical: 4, horizontal: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: ListTile(
+                              leading: client.photo != null
+                                  ? CircleAvatar(
+                                      radius: 25,
+                                      backgroundImage:
+                                          NetworkImage(client.photo!),
+                                      onBackgroundImageError: (_, __) =>
+                                          const Icon(Icons.error),
+                                    )
+                                  : const CircleAvatar(
+                                      radius: 25,
+                                      backgroundColor: Colors.teal,
+                                      child: Icon(Icons.person,
+                                          size: 30, color: Colors.white),
+                                    ),
+                              title: Text(
+                                client.name ?? 'Sans nom',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Contact: ${client.contact ?? 'Non spécifié'}',
+                                    style: const TextStyle(fontSize: 14),
+                                  ),
+                                  Text(
+                                    'Statut: ${client.status ?? 'Non spécifié'}',
+                                    style: const TextStyle(fontSize: 14),
+                                  ),
+                                ],
+                              ),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.edit,
+                                        color: Colors.teal),
+                                    onPressed: () async {
+                                      final result = await Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              EditClientPage(client: client),
+                                        ),
+                                      );
+                                      if (result == true && mounted) {
+                                        controller.loadClients();
+                                      }
+                                    },
+                                    tooltip: 'Modifier le client',
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete,
+                                        color: Colors.red),
+                                    onPressed: () => _deleteClient(
+                                        client.id, client.name ?? 'Sans nom'),
+                                    tooltip: 'Supprimer le client',
+                                  ),
+                                ],
+                              ),
+                              onTap: () {
+                                Navigator.pushNamed(
+                                  context,
+                                  '/client_detail',
+                                  arguments: client,
+                                );
+                              },
+                            ),
+                          );
+                        },
                       ),
                     ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 4),
-                        Text('Contact: ${client.contact ?? 'N/A'}'),
-                        Text('Statut: ${client.status ?? 'N/A'}'),
-                      ],
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit, color: Colors.teal),
-                          onPressed: () async {
-                            print('Navigating to EditClientPage for client: ${client.id}');
-                            try {
-                              final result = await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => EditClientPage(client: client),
-                                ),
-                              );
-                              if (result == true && mounted) {
-                                print('Client updated successfully, refreshing list');
-                                _refreshClients();
-                              }
-                            } catch (e) {
-                              print('Error navigating to EditClientPage: $e');
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Erreur d’accès à la page de modification: $e')),
-                                );
-                              }
-                            }
-                          },
-                          tooltip: 'Modifier le client',
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => _deleteClient(client.id, client.name ?? 'Sans nom'),
-                          tooltip: 'Supprimer le client',
-                        ),
-                      ],
-                    ),
-                    onTap: () {
-                      print('Navigating to client detail for client: ${client.id}');
-                      Navigator.pushNamed(
-                        context,
-                        '/client_detail',
-                        arguments: client,
-                      );
-                    },
-                  ),
-                );
-              },
-            ),
-          );
-        },
-      ),
     );
   }
 }

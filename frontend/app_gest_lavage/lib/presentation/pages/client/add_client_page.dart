@@ -1,7 +1,8 @@
 import 'package:app_gest_lavage/data/services/client_service.dart';
 import 'package:app_gest_lavage/presentation/providers/auth_controller.dart';
+import 'package:app_gest_lavage/presentation/providers/client_management_controller.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart'; // For photo selection
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -21,7 +22,7 @@ class _AddClientPageState extends State<AddClientPage> {
   final _passwordController = TextEditingController();
   final _contactController = TextEditingController();
   final _detailsController = TextEditingController();
-  XFile? _photo; // Changed from TextEditingController to XFile for file handling
+  XFile? _photo;
   DateTime? _startDate;
   Status? _status;
   bool _isLoading = false;
@@ -76,33 +77,22 @@ class _AddClientPageState extends State<AddClientPage> {
 
     setState(() => _isLoading = true);
 
+    final controller = Provider.of<ClientManagementController>(context, listen: false);
     try {
-      final clientService = ClientService();
-      final success = await clientService.createUser(
+      await controller.createClient(
+        name: _nameController.text,
         email: _emailController.text,
         password: _passwordController.text,
-        name: _nameController.text,
-        contact: _contactController.text.isEmpty ? null : _contactController.text,
-        photo: _photo, // Pass XFile, handled by ApiFetcher
+        contact: _contactController.text,
         details: _detailsController.text.isEmpty ? null : _detailsController.text,
-        startDate: _startDate, // Will be converted to String in ApiFetcher
-        status: _status?.name, // Use enum name as string
-        roles: ['client'],
+        startDate: _startDate,
+        status: _status?.name, // Convert Status? to String?
       );
-
-      if (success) {
-        if (mounted) {
-          Navigator.pop(context, true);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Utilisateur créé avec succès')),
-          );
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Échec de la création')),
-          );
-        }
+      if (mounted) {
+        Navigator.pop(context, true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Utilisateur créé avec succès')),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -120,6 +110,7 @@ class _AddClientPageState extends State<AddClientPage> {
   @override
   Widget build(BuildContext context) {
     final authController = Provider.of<AuthController>(context);
+    final controller = Provider.of<ClientManagementController>(context);
 
     if (authController.currentRole != 'admin') {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -135,193 +126,215 @@ class _AddClientPageState extends State<AddClientPage> {
         elevation: 0,
         centerTitle: true,
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Card(
-            elevation: 4,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Nouveau Client',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.teal,
+      body: controller.loading
+          ? const Center(child: CircularProgressIndicator(color: Colors.teal))
+          : controller.error != null
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error_outline, size: 50, color: Colors.red),
+                      const SizedBox(height: 16),
+                      Text(
+                        controller.error!,
+                        style: const TextStyle(fontSize: 16, color: Colors.red),
+                        textAlign: TextAlign.center,
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: InputDecoration(
-                        labelText: 'Nom',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        prefixIcon: const Icon(Icons.person, color: Colors.teal),
-                      ),
-                      validator: (value) =>
-                          value!.isEmpty ? 'Le nom est requis' : null,
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _emailController,
-                      decoration: InputDecoration(
-                        labelText: 'Email',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        prefixIcon: const Icon(Icons.email, color: Colors.teal),
-                      ),
-                      keyboardType: TextInputType.emailAddress,
-                      validator: (value) {
-                        if (value!.isEmpty) return 'L\'email est requis';
-                        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                            .hasMatch(value)) {
-                          return 'Email invalide';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _passwordController,
-                      decoration: InputDecoration(
-                        labelText: 'Mot de passe',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        prefixIcon: const Icon(Icons.lock, color: Colors.teal),
-                      ),
-                      obscureText: true,
-                      validator: (value) {
-                        if (value!.isEmpty) return 'Le mot de passe est requis';
-                        if (value.length < 6) return 'Minimum 6 caractères';
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _contactController,
-                      decoration: InputDecoration(
-                        labelText: 'Contact',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        prefixIcon: const Icon(Icons.phone, color: Colors.teal),
-                      ),
-                      keyboardType: TextInputType.phone,
-                      validator: (value) {
-                        if (value != null && value.isNotEmpty) {
-                          const phoneRegExp = r'^\+?[1-9]\d{1,14}$';
-                          const emailRegExp = r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$';
-                          if (!RegExp(phoneRegExp).hasMatch(value) &&
-                              !RegExp(emailRegExp).hasMatch(value)) {
-                            return 'Contact invalide (téléphone ou email)';
-                          }
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _detailsController,
-                      decoration: InputDecoration(
-                        labelText: 'Détails',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        prefixIcon: const Icon(Icons.info, color: Colors.teal),
-                      ),
-                      maxLines: 3,
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            readOnly: true,
-                            decoration: InputDecoration(
-                              labelText: 'Date de début',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              prefixIcon: const Icon(Icons.calendar_today, color: Colors.teal),
-                            ),
-                            controller: TextEditingController(
-                              text: _startDate == null
-                                  ? 'Sélectionner la date'
-                                  : DateFormat.yMMMd().format(_startDate!),
-                            ),
-                            onTap: _selectDate,
-                            validator: (value) => _startDate == null
-                                ? 'La date est requise'
-                                : null,
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () => controller.loadClients(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.teal,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        IconButton(
-                          icon: const Icon(Icons.calendar_today, color: Colors.teal),
-                          onPressed: _selectDate,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<Status>(
-                      value: _status,
-                      decoration: InputDecoration(
-                        labelText: 'Statut',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        prefixIcon: const Icon(Icons.toggle_on, color: Colors.teal),
+                        child: const Text('Réessayer'),
                       ),
-                      items: Status.values.map((status) => DropdownMenuItem(
-                        value: status,
-                        child: Text(status.name),
-                      )).toList(),
-                      onChanged: (value) => setState(() => _status = value),
-                      validator: (value) => value == null ? 'Statut requis' : null,
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: _pickPhoto,
-                      child: const Text('Sélectionner une photo'),
-                    ),
-                    if (_photo != null) const SizedBox(height: 8),
-                    if (_photo != null) Text('Photo sélectionnée: ${_photo!.name}'),
-                    const SizedBox(height: 24),
-                    Center(
-                      child: _isLoading
-                          ? const CircularProgressIndicator()
-                          : ElevatedButton(
-                              onPressed: _submitForm,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.teal,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 32, vertical: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
+                    ],
+                  ),
+                )
+              : SafeArea(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Card(
+                      elevation: 4,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Nouveau Client',
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.teal,
                                 ),
-                                textStyle: const TextStyle(fontSize: 16),
                               ),
-                              child: const Text('Ajouter le Client'),
-                            ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                controller: _nameController,
+                                decoration: InputDecoration(
+                                  labelText: 'Nom',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  prefixIcon: const Icon(Icons.person, color: Colors.teal),
+                                ),
+                                validator: (value) =>
+                                    value == null || value.trim().isEmpty
+                                        ? 'Le nom est requis'
+                                        : null,
+                              ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                controller: _emailController,
+                                decoration: InputDecoration(
+                                  labelText: 'Email',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  prefixIcon: const Icon(Icons.email, color: Colors.teal),
+                                ),
+                                validator: (value) => value == null || !RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value ?? '')
+                                    ? 'Email invalide'
+                                    : null,
+                              ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                controller: _passwordController,
+                                decoration: InputDecoration(
+                                  labelText: 'Mot de passe',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  prefixIcon: const Icon(Icons.lock, color: Colors.teal),
+                                ),
+                                obscureText: true,
+                                validator: (value) => value == null || value.length < 6
+                                    ? 'Mot de passe doit avoir au moins 6 caractères'
+                                    : null,
+                              ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                controller: _contactController,
+                                decoration: InputDecoration(
+                                  labelText: 'Contact',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  prefixIcon: const Icon(Icons.phone, color: Colors.teal),
+                                ),
+                                keyboardType: TextInputType.phone,
+                                validator: (value) {
+                                  if (value != null && value.isNotEmpty) {
+                                    const phoneRegExp = r'^\+?[1-9]\d{1,14}$';
+                                    const emailRegExp = r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$';
+                                    if (!RegExp(phoneRegExp).hasMatch(value) &&
+                                        !RegExp(emailRegExp).hasMatch(value)) {
+                                      return 'Contact invalide (téléphone ou email)';
+                                    }
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                controller: _detailsController,
+                                decoration: InputDecoration(
+                                  labelText: 'Détails',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  prefixIcon: const Icon(Icons.info, color: Colors.teal),
+                                ),
+                                maxLines: 3,
+                              ),
+                              const SizedBox(height: 16),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextFormField(
+                                      readOnly: true,
+                                      decoration: InputDecoration(
+                                        labelText: 'Date de début',
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        prefixIcon: const Icon(Icons.calendar_today, color: Colors.teal),
+                                      ),
+                                      controller: TextEditingController(
+                                        text: _startDate == null
+                                            ? 'Sélectionner la date'
+                                            : DateFormat.yMMMd().format(_startDate!),
+                                      ),
+                                      onTap: _selectDate,
+                                      validator: (value) => _startDate == null
+                                          ? 'La date est requise'
+                                          : null,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  IconButton(
+                                    icon: const Icon(Icons.calendar_today, color: Colors.teal),
+                                    onPressed: _selectDate,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              DropdownButtonFormField<Status>(
+                                value: _status,
+                                decoration: InputDecoration(
+                                  labelText: 'Statut',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  prefixIcon: const Icon(Icons.toggle_on, color: Colors.teal),
+                                ),
+                                items: Status.values.map((status) => DropdownMenuItem(
+                                  value: status,
+                                  child: Text(status.name),
+                                )).toList(),
+                                onChanged: (value) => setState(() => _status = value),
+                                validator: (value) => value == null ? 'Statut requis' : null,
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: _pickPhoto,
+                                child: const Text('Sélectionner une photo'),
+                              ),
+                              if (_photo != null) const SizedBox(height: 8),
+                              if (_photo != null) Text('Photo sélectionnée: ${_photo!.name}'),
+                              const SizedBox(height: 24),
+                              Center(
+                                child: _isLoading
+                                    ? const CircularProgressIndicator()
+                                    : ElevatedButton(
+                                        onPressed: _submitForm,
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.teal,
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 32, vertical: 16),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          textStyle: const TextStyle(fontSize: 16),
+                                        ),
+                                        child: const Text('Ajouter le Client'),
+                                      ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
+                  ),
+                ),);
   }
 }

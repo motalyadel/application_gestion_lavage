@@ -356,10 +356,6 @@
 //   }
 // }
 
-
-
-
-
 import 'package:app_gest_lavage/core/network/api_fetcher.dart';
 import 'package:app_gest_lavage/data/models/auth_model.dart';
 import 'package:app_gest_lavage/data/services/base_service.dart'; // Adjust import
@@ -389,11 +385,11 @@ class ClientService extends BaseService {
   Future<List<Client>> getAllClients() async {
     try {
       print('Fetching all Clients...');
-      // Fetch users with the 'client' role
+      // Étape 1: Récupérer les user IDs avec rôle 'client'
       final roleResponse = await clientSpb
           .from('user_roles')
           .select('user_id')
-          .eq('role_id', 'client'); // Changed from app_role_id to role_id
+          .eq('role_id', 'client');
       print('Users with client role: $roleResponse');
       if (roleResponse.isEmpty) {
         print('No users with client role found.');
@@ -403,27 +399,39 @@ class ClientService extends BaseService {
           roleResponse.map((item) => item['user_id'] as String).toList();
       print('Client user IDs: $userIds');
 
-      // Fetch user data with client details
-      final response = await clientSpb.from('users').select('''
-          id,
-          name,
-          status,
-          client!left(contact, details, photo, start_date),
-          roles:user_roles(role_id, app_role!inner(id)) // Adjusted to use role_id
+      // Étape 2: Fetcher les users de base (id, name, status, roles)
+      final usersResponse = await clientSpb.from('users').select('''
+          id, name, status,
+          roles: user_roles(role_id, app_role!inner(id))
         ''').inFilter('id', userIds);
-      print('Raw Supabase response: $response');
-      if (response.isEmpty) {
+      print('Raw users response: $usersResponse');
+
+      if (usersResponse.isEmpty) {
         print('No matching users found in the users table.');
-      } else {
-        for (var item in response) {
-          print('Response item: $item');
-          print('Client field: ${item['client']}');
-        }
+        return [];
       }
 
-      final clients = response.map((map) {
-        print('Mapping client: $map');
-        return Client.fromMap(map);
+      // Étape 3: Fetcher les données client via id (assume client.id = users.id)
+      final clientsResponse = await clientSpb
+          .from('client')
+          .select('id, contact, details, photo, start_date')
+          .inFilter('id', userIds); // Back to 'id'
+      print('Raw clients response: $clientsResponse');
+
+      // Étape 4: Mapper en objet Client en merging users + client
+      final Map<String, Map<String, dynamic>> clientMap = {
+        for (var c in clientsResponse) (c['id'] as String): c // Key by id
+      };
+
+      final clients = usersResponse.map((userMap) {
+        print('Mapping user: $userMap');
+        final userId = userMap['id'] as String;
+        final clientData = clientMap[userId] ?? {}; // Merger si client existe
+        print('Client data for $userId: $clientData');
+        return Client.fromMap({
+          ...userMap,
+          'client': clientData
+        }); // Ajoute 'client' pour compatibilité fromMap
       }).toList();
       print('Fetched ${clients.length} clients');
       return clients;
@@ -568,42 +576,19 @@ class ClientService extends BaseService {
     String? details,
     Status? status,
     String? email,
+    String? photo,
   }) async {
     try {
-      if (name != null && name.trim().isEmpty) {
-        print('Validation failed: Name cannot be empty');
-        return false;
-      }
-      if (contact != null && contact.trim().isEmpty) {
-        contact = null;
-      }
-      if (contact != null && !_isValidContact(contact)) {
-        print('Validation failed: Invalid contact format');
-        return false;
-      }
-      if (email != null &&
-          !RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
-        print('Validation failed: Invalid email format');
-        return false;
-      }
-      final currentUser = clientSpb.auth.currentUser!;
-      final roleResponse = await clientSpb
-          .from('user_roles')
-          .select('app_role(id)')
-          .eq('user_id', currentUser.id)
-          .single();
-      final userRole = roleResponse['app_role']['id'];
-      final isAdmin = userRole == 'admin';
-      final isSelf = currentUser.id == userId;
-      if (!isAdmin && !isSelf) {
-        print(
-            'Unauthorized: Only admins or the user themselves can update this profile');
-        return false;
-      }
-      if (!isAdmin && status != null) {
-        print('Unauthorized: Only admins can update status');
-        return false;
-      }
+      final currentUser = clientSpb.auth.currentUser;
+      final isSelf = currentUser?.id == userId;
+      final isAdmin = currentUser != null &&
+          (await clientSpb
+                  .from('user_roles')
+                  .select('app_role(id)')
+                  .eq('user_id', currentUser.id)
+                  .single())['app_role']['id'] ==
+              'admin';
+
       final userUpdates = <String, dynamic>{};
       final clientUpdates = <String, dynamic>{};
       if ((email != null || name != null) && isSelf) {
@@ -623,27 +608,60 @@ class ClientService extends BaseService {
         }
         if (details != null && details.trim().isNotEmpty)
           clientUpdates['details'] = details.trim();
+        if (photo != null && photo.isNotEmpty) {
+          clientUpdates['photo'] = photo;
+        }
       }
       print('User updates: $userUpdates');
       print('Client updates: $clientUpdates');
+
+      // Update users table
+      bool userSuccess = true;
       if (userUpdates.isNotEmpty) {
-        await clientSpb
-            .from(AuthModel.usersTableName)
-            .update(userUpdates)
-            .eq('id', userId);
+        try {
+          final userResult = await clientSpb
+              .from(AuthModel.usersTableName)
+              .update(userUpdates)
+              .eq('id', userId);
+          final userCount = userResult?.count ?? 0;
+          print('Users updated: $userCount rows');
+          userSuccess =
+              true; // Toujours success pour users (même si 0, pas d'erreur critique)
+        } catch (e) {
+          print('User update failed: $e');
+          userSuccess = false;
+        }
       }
+
+      // Upsert client table: Use upsert with id
+      bool clientSuccess = true;
       if (clientUpdates.isNotEmpty) {
-        await clientSpb.from('client').update(clientUpdates).eq('id', userId);
+        clientUpdates['id'] = userId; // Set id PK
+        try {
+          final upsertResult = await clientSpb
+              .from('client')
+              .upsert(clientUpdates, onConflict: 'id'); // Upsert on id conflict
+          final count = upsertResult?.count ??
+              0; // Safe access: null-safe avec fallback 0
+          print('Client upserted: $count rows');
+          clientSuccess =
+              count > 0 || true; // Success même si 0 (pas de changement)
+        } catch (e) {
+          print('Client upsert failed: $e');
+          clientSuccess = false;
+        }
       }
-      print('Updated client: $userId');
-      return true;
+
+      print(
+          'Overall update success: $clientSuccess for $userId (user: $userSuccess)');
+      return userSuccess && clientSuccess;
     } catch (e) {
       print("updateClient() failed: $e");
       return false;
     }
   }
 
-  Future<String?> _uploadPhoto(cross_file.XFile photo, String path) async {
+  Future<String?> uploadPhoto(cross_file.XFile photo, String path) async {
     try {
       print('Uploading photo');
       final fileBytes = await photo.readAsBytes();

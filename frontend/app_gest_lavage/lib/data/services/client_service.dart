@@ -736,4 +736,124 @@ class ClientService extends BaseService {
       return false;
     }
   }
+
+  Future<Client?> getCurrentClient() async {
+    try {
+      final userId = clientSpb.auth.currentUser?.id;
+      if (userId == null) {
+        print('No user logged in');
+        return null;
+      }
+
+      // Fetch user data
+      final userResponse = await clientSpb.from('users').select('''
+          id, name, status,
+          roles: user_roles(role_id, app_role!inner(id)),
+          client(id, contact, details, photo, start_date)
+        ''').eq('id', userId).single();
+      print('Current user response: $userResponse');
+
+      return Client.fromMap(userResponse);
+    } catch (e) {
+      print('getCurrentClient() failed: $e');
+      return null;
+    }
+  }
+
+  Future<bool> updateClientProfile({
+    required String userId,
+    String? name,
+    String? contact,
+    String? details,
+    String? photo,
+  }) async {
+    try {
+      final userUpdates = <String, dynamic>{};
+      final clientUpdates = <String, dynamic>{};
+
+      // Update auth.user metadata and users table
+      if (name != null && name.trim().isNotEmpty) {
+        userUpdates['name'] = name.trim();
+        try {
+          final authResponse = await clientSpb.auth.updateUser(
+            UserAttributes(data: {'name': name.trim()}),
+          );
+          print(
+              'Auth user metadata updated: ${authResponse.user?.userMetadata}');
+        } catch (e) {
+          print('Auth metadata update failed: $e');
+        }
+      }
+      if (contact != null && contact.trim().isNotEmpty) {
+        clientUpdates['contact'] = contact.trim();
+      }
+      if (details != null && details.trim().isNotEmpty) {
+        clientUpdates['details'] = details.trim();
+      }
+      if (photo != null && photo.isNotEmpty) {
+        clientUpdates['photo'] = photo;
+      }
+      print('User profile updates: $userUpdates');
+      print('Client profile updates: $clientUpdates');
+
+      bool userSuccess = true;
+      if (userUpdates.isNotEmpty) {
+        try {
+          final userResult = await clientSpb
+              .from('users')
+              .update(userUpdates)
+              .eq('id', userId)
+              .select()
+              .single();
+          print('Users updated: $userResult');
+          if (name != null && name.trim().isNotEmpty) {
+            userSuccess = userResult['name'] == name.trim();
+          }
+        } catch (e) {
+          print('User profile update failed: $e');
+          userSuccess = false;
+        }
+      }
+
+      bool clientSuccess = true;
+      if (clientUpdates.isNotEmpty) {
+        clientUpdates['id'] = userId;
+        try {
+          final upsertResult = await clientSpb
+              .from('client')
+              .upsert(clientUpdates, onConflict: 'id')
+              .select()
+              .single();
+          print('Client profile upserted: $upsertResult');
+          clientSuccess = upsertResult['contact'] == clientUpdates['contact'];
+        } catch (e) {
+          print('Client profile upsert failed: $e');
+          clientSuccess = false;
+        }
+      }
+
+      print(
+          'Profile update success: $clientSuccess for $userId (user: $userSuccess)');
+      return userSuccess && clientSuccess;
+    } catch (e) {
+      print('updateClientProfile() failed: $e');
+      return false;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getLoginHistory(String userId) async {
+    try {
+      final history = await clientSpb
+          .from('login_history')
+          .select('login_time, ip_address, device_info')
+          .eq('user_id', userId)
+          .order('login_time', ascending: false)
+          .limit(10); // Limit to last 10 logins
+      print('Login history: $history');
+      return List<Map<String, dynamic>>.from(history);
+    } catch (e) {
+      print('getLoginHistory() failed: $e');
+      return [];
+    }
+  }
 }

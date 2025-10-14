@@ -746,96 +746,120 @@ app
 // );
 
 // DELETE /cars/:id - Delete car
-app.delete("/cars/:id", async ({ params, set, headers }) => {
-  // Log the entire request to debug
-  //
+app.post(
+  "/delete-car",
+  async ({ body, set }) => {
+    const { id } = body;
 
-  const token = headers.authorization?.replace("Bearer ", "");
-  const { data: userInfo, error: userInfoError } = await supabase.auth.getUser(
-    token
-  );
-  if (userInfoError || !userInfo?.user) {
-    set.status = 401;
-    return { success: false, error: "Unauthorized" };
+    try {
+      // Check if car exists
+      const { data: car, error: carError } = await supabase
+        .from("cars")
+        .select("id, user_id")
+        .eq("id", id)
+        .single();
+
+      if (carError || !car) {
+        console.error("Car fetch error:", carError?.message || "No car found");
+        set.status = 404;
+        return {
+          success: false,
+          error: "Car not found",
+          details: carError?.message,
+        };
+      }
+      console.log("Car found:", car);
+
+      // Delete from cars table
+      const { error: deleteError } = await supabase
+        .from("cars")
+        .delete()
+        .eq("id", id);
+
+      if (deleteError) {
+        console.error("Delete car error:", deleteError.message);
+        set.status = 500;
+        return {
+          success: false,
+          error: "Failed to delete from cars table",
+          details: deleteError.message,
+        };
+      }
+      console.log("Deleted from cars table");
+
+      // Optional: Check if user_id has other cars before deleting from user_roles
+      const { count, error: countError } = await supabase
+        .from("cars")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", car.user_id);
+
+      if (countError) {
+        console.error("Count cars error:", countError.message);
+      }
+
+      if (!countError && count === 0) {
+        // No other cars for this user, delete from user_roles
+        const { error: roleError } = await supabase
+          .from("user_roles")
+          .delete()
+          .eq("user_id", car.user_id);
+
+        if (roleError) {
+          console.error("Delete user_roles error:", roleError.message);
+          set.status = 500;
+          return {
+            success: false,
+            error: "Failed to delete from user_roles",
+            details: roleError.message,
+          };
+        }
+        console.log("Deleted from user_roles");
+
+        // Optional: Delete from users table if no other dependencies
+        const { error: usersError } = await supabase
+          .from("users")
+          .delete()
+          .eq("id", car.user_id);
+
+        if (usersError) {
+          console.error("Delete users error:", usersError.message);
+          set.status = 500;
+          return {
+            success: false,
+            error: "Failed to delete from users table",
+            details: usersError.message,
+          };
+        }
+        console.log("Deleted from users table");
+
+        // Delete from auth.users
+        const { error: userError } = await supabase.auth.admin.deleteUser(car.user_id);
+
+        if (userError) {
+          console.error("Delete auth user error:", userError.message);
+          set.status = 500;
+          return {
+            success: false,
+            error: "Failed to delete auth user",
+            details: userError.message,
+          };
+        }
+        console.log("Deleted from auth.users");
+      }
+
+      return { success: true, car_id: id };
+    } catch (e) {
+      console.error("Error in delete-car:", e);
+      set.status = 500;
+      return { success: false, error: "Internal server error", details: e };
+    }
+  },
+  {
+    body: t.Object({
+      id: t.String(),
+    }),
   }
-
-  try {
-    // Verify JWT and get user
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser(token);
-    if (error || !user) {
-      console.error("Auth error:", error?.message || "No user found");
-      set.status = 401;
-      return { success: false, error: "Invalid or expired token" };
-    }
-
-    // Check if user is admin or owns the car
-    let isAdmin = false;
-    if (user.user_metadata?.roles?.includes("admin")) {
-      isAdmin = true;
-      console.log("User is admin:", user.user_metadata);
-    }
-
-    // Fetch the car to check ownership
-    const { data: car, error: carError } = await supabase
-      .from("cars")
-      .select("id, user_id")
-      .eq("id", params.id)
-      .single();
-
-    if (carError) {
-      console.error("Car fetch error:", carError.message);
-      set.status = 400;
-      return { success: false, error: carError.message };
-    }
-
-    if (!car) {
-      set.status = 404;
-      return { success: false, error: "Car not found" };
-    }
-
-    // Check if user is authorized to delete the car
-    if (!isAdmin && car.user_id !== user.id) {
-      console.log("Unauthorized: User does not own this car and is not admin");
-      set.status = 403;
-      return {
-        success: false,
-        error: "You can only delete your own cars or must be an admin",
-      };
-    }
-
-    // Proceed with deletion
-    const { data, error: deleteError } = await supabase
-      .from("cars")
-      .delete()
-      .eq("id", params.id)
-      .select()
-      .single();
-
-    if (deleteError) {
-      console.error("Delete error:", deleteError.message);
-      set.status = 400;
-      return { success: false, error: deleteError.message };
-    }
-
-    console.log("Car deleted successfully:", data);
-    return {
-      success: true,
-      message: "Car deleted successfully",
-      data,
-    };
-  } catch (err) {
-    console.error("Unexpected error:", err);
-    set.status = 500;
-    return {
-      success: false,
-      error: "Internal server error",
-      details: err,
-    };
-  }
-});
+);
 
 app.listen(3000, () => {
   console.log("✅ Server running on http://localhost:3000");

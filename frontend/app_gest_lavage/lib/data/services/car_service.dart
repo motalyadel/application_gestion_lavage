@@ -157,35 +157,36 @@ class CarService {
 
   Future<bool> deleteCar(String id) async {
     try {
-      // Check if the user is logged in
-      final currentUser = clientSpb.auth.currentUser;
-      if (currentUser == null) {
-        print('No user logged in');
-        stdout.flush();
-        return false;
+      if (clientSpb.auth.currentUser == null) {
+        print('No user logged in, attempting to refresh session'); stdout.flush();
+        await clientSpb.auth.refreshSession();
+        if (clientSpb.auth.currentUser == null) {
+          print('Session refresh failed'); stdout.flush();
+          throw Exception('Utilisateur non connecté');
+        }
       }
 
-      // Call the DELETE endpoint
-      final response = await apiFetcher.delete('cars/$id');
-      print('Delete car response: $response');
-      stdout.flush();
+      // Update apiFetcher with latest token
+      final apiFetcher = ApiFetcher(
+        accessToken: Supabase.instance.client.auth.currentSession?.accessToken,
+        baseUrl: 'http://10.0.2.2:3000', // Update to 'https://xxxx.ngrok.io' if using ngrok
+      );
+
+      // Call the POST /delete-car endpoint
+      final response = await apiFetcher.post('delete-car', body: {'id': id}).timeout(Duration(seconds: 15));
+      print('Delete car response: $response'); stdout.flush();
 
       if (!response.isSuccess) {
-        print(
-            'Failed to delete car: ${response.error} (Status: ${response.status})');
-        stdout.flush();
-        return false;
+        print('Failed to delete car: ${response.error} (Status: ${response.status})'); stdout.flush();
+        throw Exception('Échec de la suppression de la voiture : ${response.error}');
       }
 
-      print('Car deleted: $id');
-      stdout.flush();
+      print('Car deleted: $id'); stdout.flush();
       return true;
     } catch (e, stackTrace) {
-      print('deleteCar() failed: $e');
-      stdout.flush();
-      print('Stack trace: $stackTrace');
-      stdout.flush();
-      return false;
+      print('deleteCar() failed: $e'); stdout.flush();
+      print('Stack trace: $stackTrace'); stdout.flush();
+      throw Exception('Échec de la suppression de la voiture : $e');
     }
   }
 }

@@ -103,22 +103,18 @@ class ApiFetcher {
   }
 
   Future<FetcherResponse> delete(String path) async {
-    final dio = Dio();
-    dio
+    final dio = Dio()
       ..httpClientAdapter = IOHttpClientAdapter()
       ..options.baseUrl = baseUrl
       ..options.headers = {
         'Content-Type': 'application/json',
-        'ngrok-skip-browser-warning': 'aby',
         if (accessToken != null) 'Authorization': 'Bearer $accessToken',
       };
 
     try {
       print('Sending DELETE request to: ${dio.options.baseUrl}/$path');
       final response = await dio.delete('/$path');
-
-      print(
-          'Received response: status ${response.statusCode}, body ${response.data}');
+      print('Received response: status ${response.statusCode}, body ${response.data}');
       final responseBody = response.data;
 
       return FetcherResponse(
@@ -128,12 +124,15 @@ class ApiFetcher {
         error: response.statusCode != 200
             ? (responseBody is Map
                 ? responseBody['error'] ?? responseBody.toString()
-                : responseBody)
+                : responseBody.toString())
             : null,
       );
     } catch (e, stackTrace) {
       print('DELETE request failed: $e');
       print('Stack trace: $stackTrace');
+      if (e is DioException) {
+        print('DioException details: type=${e.type}, message=${e.message}, response=${e.response}');
+      }
       return FetcherResponse(
         status: 0,
         url: path,

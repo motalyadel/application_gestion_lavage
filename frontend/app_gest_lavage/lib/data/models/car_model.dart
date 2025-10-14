@@ -1,15 +1,16 @@
+
 class Car {
   final String id;
-  final String clientId;
+  final String userId; // Changed from clientId
   final String? marque;
   final String? modele;
   final String immatriculation;
   final DateTime createdAt;
   final DateTime updatedAt;
 
-  Car({
+  const Car({
     required this.id,
-    required this.clientId,
+    required this.userId,
     this.marque,
     this.modele,
     required this.immatriculation,
@@ -20,7 +21,7 @@ class Car {
   factory Car.fromMap(Map<String, dynamic> map) {
     return Car(
       id: map['id'] as String,
-      clientId: map['client_id'] as String,
+      userId: map['user_id'] as String, // Changed from client_id
       marque: map['marque'] as String?,
       modele: map['modele'] as String?,
       immatriculation: map['immatriculation'] as String,
@@ -32,7 +33,7 @@ class Car {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'client_id': clientId,
+      'user_id': userId, // Changed from client_id
       'marque': marque,
       'modele': modele,
       'immatriculation': immatriculation,
@@ -40,4 +41,7 @@ class Car {
       'updated_at': updatedAt.toIso8601String(),
     };
   }
+
+  @override
+  List<Object?> get props => [id, userId, marque, modele, immatriculation, createdAt, updatedAt];
 }

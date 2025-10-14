@@ -561,88 +561,281 @@ app
         id: t.String(),
       }),
     }
+  )
+
+  //   // Update client (admin only)
+  // .post(
+  //   "/update-client",
+  //   async ({ body, set }) => {
+  //     const { id, name, status, contact, details, photo, start_date } = body;
+
+  //     try {
+  //       // Update user metadata
+  //       const { data: updatedUser, error: userError } = await supabase.auth.admin.updateUserById(id, {
+  //         user_metadata: { name, roles: ["client"], status },
+  //       });
+
+  //       if (userError) {
+  //         set.status = 400;
+  //         return { success: false, error: userError.message };
+  //       }
+
+  //       // Handle photo upload if provided
+  //       let photoUrl = photo || null;
+  //       if (photo && typeof photo !== 'string') {
+  //         const photoPath = `client/${id}/${Date.now()}.jpg`;
+  //         const { error: uploadError } = await supabase.storage
+  //           .from("avatars")
+  //           .upload(photoPath, photo, {
+  //             contentType: photo.type,
+  //             upsert: true,
+  //           });
+
+  //         if (uploadError) {
+  //           set.status = 500;
+  //           return { success: false, error: "Failed to upload photo", details: uploadError.message };
+  //         }
+
+  //         photoUrl = supabase.storage.from("avatars").getPublicUrl(photoPath).data.publicUrl;
+  //       }
+
+  //       // Update client table
+  //       const { error: clientError } = await supabase
+  //         .from("cleint")
+  //         .update({
+  //           contact,
+  //           details,
+  //           photo: photoUrl,
+  //           start_date,
+  //         })
+  //         .eq('id', id);
+
+  //       if (clientError) {
+  //         set.status = 500;
+  //         return { success: false, error: clientError.message };
+  //       }
+
+  //       // Update user metadata with photo URL if changed
+  //       if (photoUrl) {
+  //         await supabase.auth.admin.updateUserById(id, {
+  //           user_metadata: { name, roles: ["client"], status, photo: photoUrl },
+  //         });
+  //       }
+
+  //       return { success: true, user_id: id };
+  //     } catch (e) {
+  //       console.error("Error in update-client:", e);
+  //       set.status = 500;
+  //       return { success: false, error: "Internal server error"};
+  //     }
+  //   },
+  //   {
+  //     // beforeHandle: isAdmin,
+  //     body: t.Object({
+  //       id: t.String(),
+  //       name: t.Optional(t.String()),
+  //       status: t.Optional(t.String()),
+  //       contact: t.Optional(t.String()),
+  //       details: t.Optional(t.String()),
+  //       photo: t.Optional(t.Union([t.File(), t.String()])),
+  //       start_date: t.Optional(t.String()),
+  //     }),
+  //   }
+
+  // );
+
+  .post(
+    "/car",
+    async ({ body, headers, set }) => {
+      const { client_id, marque, modele, immatriculation } = body;
+      // Get current user info from Authorization header
+      const token = headers.authorization?.replace("Bearer ", "");
+      const { data: userInfo, error: userInfoError } =
+        await supabase.auth.getUser(token);
+      if (userInfoError || !userInfo?.user) {
+        set.status = 401;
+        return { success: false, error: "Unauthorized" };
+      }
+      const currentUser = userInfo.user;
+      const currentRoles = currentUser.user_metadata?.roles || [];
+      const isAdmin = currentRoles.includes("admin");
+      // Check authorization: admins can add for any client, users can only add for themselves
+      if (!isAdmin && client_id !== currentUser.id) {
+        set.status = 403;
+        return {
+          success: false,
+          error: "You can only add cars for your own account",
+        };
+      }
+      try {
+        const data = {
+          client_id: client_id,
+          marque: marque?.trim(),
+          modele: modele?.trim(),
+          immatriculation: immatriculation.trim(),
+          updated_at: new Date().toISOString(),
+        };
+        const { data: createdCar, error } = await supabase
+          .from("cars")
+          .insert(data)
+          .select()
+          .single();
+        if (error) {
+          set.status = 400;
+          return { success: false, error: error.message, details: error };
+        }
+        return {
+          success: true,
+          car: createdCar,
+          message: "Car added successfully",
+        };
+      } catch (err) {
+        console.error("Error adding car:", err);
+        set.status = 500;
+        return {
+          success: false,
+          error: "Internal server error",
+          details: err instanceof Error ? err.message : JSON.stringify(err),
+        };
+      }
+    },
+    {
+      body: t.Object({
+        client_id: t.String(),
+        marque: t.Optional(t.String()),
+        modele: t.Optional(t.String()),
+        immatriculation: t.String(),
+      }),
+    }
   );
 
-//   // Update client (admin only)
-// .post(
-//   "/update-client",
+// app.post(
+//   "/delete-car",
 //   async ({ body, set }) => {
-//     const { id, name, status, contact, details, photo, start_date } = body;
-
+//     const { id } = body;
 //     try {
-//       // Update user metadata
-//       const { data: updatedUser, error: userError } = await supabase.auth.admin.updateUserById(id, {
-//         user_metadata: { name, roles: ["client"], status },
-//       });
+//       // Delete from cars table
+//       const { error: carError } = await supabase
+//         .from("cars")
+//         .delete()
+//         .eq("id", id);
 
-//       if (userError) {
-//         set.status = 400;
-//         return { success: false, error: userError.message };
-//       }
-
-//       // Handle photo upload if provided
-//       let photoUrl = photo || null;
-//       if (photo && typeof photo !== 'string') {
-//         const photoPath = `client/${id}/${Date.now()}.jpg`;
-//         const { error: uploadError } = await supabase.storage
-//           .from("avatars")
-//           .upload(photoPath, photo, {
-//             contentType: photo.type,
-//             upsert: true,
-//           });
-
-//         if (uploadError) {
-//           set.status = 500;
-//           return { success: false, error: "Failed to upload photo", details: uploadError.message };
-//         }
-
-//         photoUrl = supabase.storage.from("avatars").getPublicUrl(photoPath).data.publicUrl;
-//       }
-
-//       // Update client table
-//       const { error: clientError } = await supabase
-//         .from("cleint")
-//         .update({
-//           contact,
-//           details,
-//           photo: photoUrl,
-//           start_date,
-//         })
-//         .eq('id', id);
-
-//       if (clientError) {
+//       if (carError) {
 //         set.status = 500;
-//         return { success: false, error: clientError.message };
+//         return {
+//           success: false,
+//           error: "Failed to delete from cars table",
+//           details: carError.message,
+//         };
 //       }
 
-//       // Update user metadata with photo URL if changed
-//       if (photoUrl) {
-//         await supabase.auth.admin.updateUserById(id, {
-//           user_metadata: { name, roles: ["client"], status, photo: photoUrl },
-//         });
-//       }
+//       console.log(`Deleted car with id: ${id}`);
 
-//       return { success: true, user_id: id };
+//       return { success: true, car_id: id };
 //     } catch (e) {
-//       console.error("Error in update-client:", e);
+//       console.error("Error in delete-car:", e);
 //       set.status = 500;
-//       return { success: false, error: "Internal server error"};
+//       return { success: false, error: "Internal server error", details: e };
 //     }
 //   },
 //   {
-//     // beforeHandle: isAdmin,
 //     body: t.Object({
 //       id: t.String(),
-//       name: t.Optional(t.String()),
-//       status: t.Optional(t.String()),
-//       contact: t.Optional(t.String()),
-//       details: t.Optional(t.String()),
-//       photo: t.Optional(t.Union([t.File(), t.String()])),
-//       start_date: t.Optional(t.String()),
 //     }),
 //   }
-
 // );
+
+// DELETE /cars/:id - Delete car
+app.delete("/cars/:id", async ({ params, set, headers }) => {
+  // Log the entire request to debug
+  //
+
+  const token = headers.authorization?.replace("Bearer ", "");
+  const { data: userInfo, error: userInfoError } = await supabase.auth.getUser(
+    token
+  );
+  if (userInfoError || !userInfo?.user) {
+    set.status = 401;
+    return { success: false, error: "Unauthorized" };
+  }
+
+  try {
+    // Verify JWT and get user
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser(token);
+    if (error || !user) {
+      console.error("Auth error:", error?.message || "No user found");
+      set.status = 401;
+      return { success: false, error: "Invalid or expired token" };
+    }
+
+    // Check if user is admin or owns the car
+    let isAdmin = false;
+    if (user.user_metadata?.roles?.includes("admin")) {
+      isAdmin = true;
+      console.log("User is admin:", user.user_metadata);
+    }
+
+    // Fetch the car to check ownership
+    const { data: car, error: carError } = await supabase
+      .from("cars")
+      .select("id, user_id")
+      .eq("id", params.id)
+      .single();
+
+    if (carError) {
+      console.error("Car fetch error:", carError.message);
+      set.status = 400;
+      return { success: false, error: carError.message };
+    }
+
+    if (!car) {
+      set.status = 404;
+      return { success: false, error: "Car not found" };
+    }
+
+    // Check if user is authorized to delete the car
+    if (!isAdmin && car.user_id !== user.id) {
+      console.log("Unauthorized: User does not own this car and is not admin");
+      set.status = 403;
+      return {
+        success: false,
+        error: "You can only delete your own cars or must be an admin",
+      };
+    }
+
+    // Proceed with deletion
+    const { data, error: deleteError } = await supabase
+      .from("cars")
+      .delete()
+      .eq("id", params.id)
+      .select()
+      .single();
+
+    if (deleteError) {
+      console.error("Delete error:", deleteError.message);
+      set.status = 400;
+      return { success: false, error: deleteError.message };
+    }
+
+    console.log("Car deleted successfully:", data);
+    return {
+      success: true,
+      message: "Car deleted successfully",
+      data,
+    };
+  } catch (err) {
+    console.error("Unexpected error:", err);
+    set.status = 500;
+    return {
+      success: false,
+      error: "Internal server error",
+      details: err,
+    };
+  }
+});
 
 app.listen(3000, () => {
   console.log("✅ Server running on http://localhost:3000");

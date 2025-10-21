@@ -798,7 +798,9 @@ app.post(
       }
 
       if (!countError && count === 0) {
-        // No other cars for this user, delete from user_roles
+        // No other cars for this user, proceed to delete user-related data
+
+        // Delete from user_roles
         const { error: roleError } = await supabase
           .from("user_roles")
           .delete()
@@ -815,7 +817,41 @@ app.post(
         }
         console.log("Deleted from user_roles");
 
-        // Optional: Delete from users table if no other dependencies
+        // NEW: Delete from profile tables (admin and client) to avoid FK violations
+        // These will do nothing if no rows exist
+        const { error: adminError } = await supabase
+          .from("admin")
+          .delete()
+          .eq("id", car.user_id);
+
+        if (adminError) {
+          console.error("Delete admin error:", adminError.message);
+          set.status = 500;
+          return {
+            success: false,
+            error: "Failed to delete from admin table",
+            details: adminError.message,
+          };
+        }
+        console.log("Deleted from admin table (if existed)");
+
+        const { error: clientError } = await supabase
+          .from("client")
+          .delete()
+          .eq("id", car.user_id);
+
+        if (clientError) {
+          console.error("Delete client error:", clientError.message);
+          set.status = 500;
+          return {
+            success: false,
+            error: "Failed to delete from client table",
+            details: clientError.message,
+          };
+        }
+        console.log("Deleted from client table (if existed)");
+
+        // Now safe to delete from users table
         const { error: usersError } = await supabase
           .from("users")
           .delete()
@@ -833,7 +869,9 @@ app.post(
         console.log("Deleted from users table");
 
         // Delete from auth.users
-        const { error: userError } = await supabase.auth.admin.deleteUser(car.user_id);
+        const { error: userError } = await supabase.auth.admin.deleteUser(
+          car.user_id
+        );
 
         if (userError) {
           console.error("Delete auth user error:", userError.message);

@@ -1,4 +1,3 @@
-
 import 'package:app_gest_lavage/data/services/car_service.dart';
 import 'package:app_gest_lavage/presentation/providers/auth_controller.dart';
 import 'package:flutter/material.dart';
@@ -189,6 +188,58 @@ class _AccueilPageState extends State<AccueilPage> {
                                   SizedBox(height: 4),
                                   Text(
                                     'Voir et gérer vos voitures',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: AppColors.primaryLight,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(
+                              Icons.arrow_forward,
+                              color: Colors.white,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Card(
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    color: AppColors.primary,
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.pushNamed(context, '/client/services');
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.build,
+                              color: Colors.white,
+                              size: 32,
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: const [
+                                  Text(
+                                    'Nos Services',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    'Voir les services de lavage disponibles',
                                     style: TextStyle(
                                       fontSize: 14,
                                       color: AppColors.primaryLight,

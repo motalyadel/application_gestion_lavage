@@ -1,6 +1,7 @@
 import 'package:app_gest_lavage/data/services/car_service.dart';
 import 'package:app_gest_lavage/data/services/client_service.dart';
 import 'package:app_gest_lavage/presentation/pages/cars/add_car_page.dart';
+import 'package:app_gest_lavage/presentation/pages/admin/admin_services_page.dart';
 import 'package:app_gest_lavage/presentation/providers/auth_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -104,7 +105,8 @@ class _DashboardPageState extends State<DashboardPage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+          ? const Center(
+              child: CircularProgressIndicator(color: AppColors.primary))
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -129,7 +131,8 @@ class _DashboardPageState extends State<DashboardPage> {
                   const SizedBox(height: 24),
                   Card(
                     elevation: 4,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                     color: AppColors.surface,
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
@@ -169,13 +172,15 @@ class _DashboardPageState extends State<DashboardPage> {
                   const SizedBox(height: 24),
                   Card(
                     elevation: 4,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                     color: AppColors.primary,
                     child: InkWell(
                       onTap: () async {
                         final result = await Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const AddCarPage()),
+                          MaterialPageRoute(
+                              builder: (context) => const AddCarPage()),
                         );
                         if (result == true) {
                           _loadDashboardData();
@@ -227,11 +232,13 @@ class _DashboardPageState extends State<DashboardPage> {
                   const SizedBox(height: 16),
                   Card(
                     elevation: 4,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                     color: AppColors.primary,
                     child: InkWell(
                       onTap: () async {
-                        final result = await Navigator.pushNamed(context, '/cars');
+                        final result =
+                            await Navigator.pushNamed(context, '/cars');
                         if (result == true) {
                           _loadDashboardData();
                         }
@@ -262,6 +269,59 @@ class _DashboardPageState extends State<DashboardPage> {
                                   SizedBox(height: 4),
                                   Text(
                                     'Voir et gérer la liste des voitures',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: AppColors.primaryLight,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Icon(
+                              Icons.arrow_forward,
+                              color: Colors.white,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Card(
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    color: AppColors.primary,
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.pushNamed(context, '/admin/services');
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: const Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.build,
+                              color: Colors.white,
+                              size: 32,
+                            ),
+                            SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Gérer les Services',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    'Configurer les services de lavage',
                                     style: TextStyle(
                                       fontSize: 14,
                                       color: AppColors.primaryLight,

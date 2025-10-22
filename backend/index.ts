@@ -899,6 +899,101 @@ app.post(
   }
 );
 
+app.post(
+  "/service",
+  async ({ body, headers, set }) => {
+    const { name, description, price, duration } = body;
+
+    // Get current user info from Authorization header
+    const token = headers.authorization?.replace("Bearer ", "");
+    const { data: userInfo, error: userInfoError } =
+      await supabase.auth.getUser(token);
+    if (userInfoError || !userInfo?.user) {
+      set.status = 401;
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const currentUser = userInfo.user;
+    const currentRoles = currentUser.user_metadata?.roles || [];
+    const isAdmin = currentRoles.includes("admin");
+
+    // Check authorization: only admins can add services
+    if (!isAdmin) {
+      set.status = 403;
+      return {
+        success: false,
+        error: "Only admins can add services",
+      };
+    }
+
+    try {
+      // Handle price and duration as string or number
+      const parsedPrice =
+        typeof price === "string" ? parseInt(price, 10) : price;
+      const parsedDuration =
+        typeof duration === "string" ? parseInt(duration, 10) : duration;
+
+      const data = {
+        name: name.trim(),
+        description: description?.trim(),
+        price: parsedPrice,
+        duration: parsedDuration,
+        created_at: new Date().toISOString(),
+      };
+
+      // Validate required fields
+      if (
+        !data.name ||
+        isNaN(data.price) ||
+        data.price < 0 ||
+        isNaN(data.duration) ||
+        data.duration < 0
+      ) {
+        set.status = 400;
+        return {
+          success: false,
+          error:
+            "Invalid input: name is required, price and duration must be non-negative integers",
+        };
+      }
+
+      const { data: createdService, error } = await supabase
+        .from("services")
+        .insert(data)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error adding service:", error);
+        set.status = 400;
+        return { success: false, error: error.message, details: error };
+      }
+
+      return {
+        success: true,
+        service: createdService,
+        message: "Service added successfully (price in MRU)",
+      };
+    } catch (err) {
+      console.error("Error adding service:", err);
+      set.status = 500;
+      return {
+        success: false,
+        error: "Internal server error",
+        details: err instanceof Error ? err.message : JSON.stringify(err),
+      };
+    }
+  },
+  {
+    body: t.Object({
+      name: t.String(),
+      description: t.Optional(t.String()),
+      price: t.Union([t.Number(), t.String()]), // Allow string or number
+      duration: t.Union([t.Number(), t.String()]), // Allow string or number
+    }),
+  }
+);
+
 app.listen(3000, () => {
   console.log("✅ Server running on http://localhost:3000");
 });

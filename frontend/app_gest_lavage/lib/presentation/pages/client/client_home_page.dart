@@ -1,4 +1,5 @@
 import 'package:app_gest_lavage/presentation/pages/client/accueil_page.dart';
+import 'package:app_gest_lavage/presentation/pages/client/client_reservations_page.dart';
 import 'package:app_gest_lavage/presentation/pages/client/profile_page.dart';
 import 'package:app_gest_lavage/presentation/pages/client/reservations_page.dart';
 import 'package:app_gest_lavage/presentation/providers/auth_controller.dart';
@@ -16,13 +17,15 @@ class _ClientHomePageState extends State<ClientHomePage> {
 
   final List<Widget> _pages = [
     AccueilPage(),
-    ReservationsPage(),
+    // ReservationsPage(),
+    const ClientReservationsPage(),
     ProfilePage(),
   ];
 
   final List<BottomNavigationBarItem> _items = const [
     BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Accueil'),
-    BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Réservations'),
+    BottomNavigationBarItem(
+        icon: Icon(Icons.calendar_today), label: 'Réservations'),
     BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
   ];
 
@@ -34,7 +37,8 @@ class _ClientHomePageState extends State<ClientHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Espace Client"),
+      appBar: AppBar(
+        title: const Text("Espace Client"),
         actions: [
           PopupMenuButton<String>(
             onSelected: (value) {
@@ -49,7 +53,7 @@ class _ClientHomePageState extends State<ClientHomePage> {
             icon: const Icon(Icons.account_circle),
           )
         ],
-        ),
+      ),
       body: _pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,

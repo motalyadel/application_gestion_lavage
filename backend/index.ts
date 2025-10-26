@@ -994,6 +994,137 @@ app.post(
   }
 );
 
+app.post(
+  "/reservations",
+  async ({ body, headers, set }) => {
+    const { client_id, service_id, car_id, date_time, status } = body;
+
+    // Get current user info from Authorization header
+    const token = headers.authorization?.replace("Bearer ", "");
+    const { data: userInfo, error: userInfoError } =
+      await supabase.auth.getUser(token);
+    if (userInfoError || !userInfo?.user) {
+      set.status = 401;
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const currentUser = userInfo.user;
+    const currentRoles = currentUser.user_metadata?.roles || [];
+    const isAdmin = currentRoles.includes("admin");
+
+    // Check authorization: only admins can add reservations
+    if (!isAdmin) {
+      set.status = 403;
+      return {
+        success: false,
+        error: "Only admins can add reservations",
+      };
+    }
+
+    try {
+      // Handle date_time as string
+      const parsedDateTime = new Date(date_time);
+      if (isNaN(parsedDateTime.getTime())) {
+        set.status = 400;
+        return {
+          success: false,
+          error: "Invalid date_time: must be a valid ISO 8601 string",
+        };
+      }
+
+      const data = {
+        client_id: client_id.trim(),
+        service_id: service_id.trim(),
+        car_id: car_id.trim(),
+        date_time: parsedDateTime.toISOString(),
+        status: status?.trim() || "pending",
+        created_at: new Date().toISOString(),
+      };
+
+      // Validate required fields
+      if (
+        !data.client_id ||
+        !data.service_id ||
+        !data.car_id ||
+        !data.date_time
+      ) {
+        set.status = 400;
+        return {
+          success: false,
+          error: "Invalid input: client_id, service_id, car_id, and date_time are required",
+        };
+      }
+
+      // Verify existence of related records (optional, depending on RLS)
+      const { data: client, error: clientError } = await supabase
+        .from('auth.users')
+        .select('id')
+        .eq('id', client_id)
+        .single();
+      if (clientError || !client) {
+        set.status = 400;
+        return { success: false, error: "Invalid client_id" };
+      }
+
+      const { data: service, error: serviceError } = await supabase
+        .from('services')
+        .select('id')
+        .eq('id', service_id)
+        .single();
+      if (serviceError || !service) {
+        set.status = 400;
+        return { success: false, error: "Invalid service_id" };
+      }
+
+      const { data: car, error: carError } = await supabase
+        .from('cars')
+        .select('id')
+        .eq('id', car_id)
+        .single();
+      if (carError || !car) {
+        set.status = 400;
+        return { success: false, error: "Invalid car_id" };
+      }
+
+      // Insert reservation
+      const { data: createdReservation, error } = await supabase
+        .from('reservations')
+        .insert(data)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error adding reservation:", error);
+        set.status = 400;
+        return { success: false, error: error.message, details: error };
+      }
+
+      return {
+        success: true,
+        reservation: createdReservation,
+        message: "Reservation added successfully",
+      };
+    } catch (err) {
+      console.error("Error adding reservation:", err);
+      set.status = 500;
+      return {
+        success: false,
+        error: "Internal server error",
+        details: err instanceof Error ? err.message : JSON.stringify(err),
+      };
+    }
+  },
+  {
+    body: t.Object({
+      client_id: t.String(),
+      service_id: t.String(),
+      car_id: t.String(),
+      date_time: t.String(), // Expect ISO 8601 string
+      status: t.Optional(t.String()), // Optional, defaults to "pending"
+    }),
+  }
+);
+
 app.listen(3000, () => {
   console.log("✅ Server running on http://localhost:3000");
 });

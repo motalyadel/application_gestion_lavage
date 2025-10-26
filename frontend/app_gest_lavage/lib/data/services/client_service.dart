@@ -506,26 +506,37 @@ class ClientService extends BaseService {
 
       print('Supabase response: $response');
 
+      // Extract roles from user_roles or fallback to userMetadata
       final roleList = List<Map<String, dynamic>>.from(response['roles'] ?? []);
-      if (roleList.isEmpty) {
+      List<String> roles =
+          roleList.map((item) => AppRole.fromMap(item['app_role']).id).toList();
+
+      // Fallback to userMetadata if roles are empty
+      if (roles.isEmpty && user.userMetadata != null) {
+        final metadataRoles = user.userMetadata!['roles'];
+        if (metadataRoles is List) {
+          roles = List<String>.from(metadataRoles);
+        }
+      }
+
+      if (roles.isEmpty) {
         print('No roles found for user');
         return null;
       }
 
-      final role = roleList
-          .map((item) => AppRole.fromMap(item['app_role']))
-          .toList()
-          .first
-          .id;
+      final role = roles.first; // Take the first role
       print('User role: $role');
 
       switch (role) {
         case 'client':
           return Client.fromMap(response);
         case 'admin':
+          // Ensure admin entry exists
           await clientSpb
               .from('admin')
-              .upsert({'id': user.id}).eq('id', user.id);
+              .upsert({'id': user.id}, onConflict: 'id')
+              .select()
+              .single();
           return Admin.fromMap(response);
         default:
           print('Unknown role: $role');

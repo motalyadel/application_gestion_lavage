@@ -1,3 +1,4 @@
+import 'package:app_gest_lavage/presentation/pages/admin/admin_reservations_page.dart';
 import 'package:app_gest_lavage/presentation/pages/admin/dashboard_page.dart';
 import 'package:app_gest_lavage/presentation/pages/admin/manage_users_page.dart';
 import 'package:app_gest_lavage/presentation/pages/admin/settings_page.dart';
@@ -17,13 +18,16 @@ class _AdminHomePageState extends State<AdminHomePage> {
   final List<Widget> _pages = [
     DashboardPage(),
     ManageUsersPage(),
-    SettingsPage(),
+    // SettingsPage(),
+    AdminReservationsPage()
   ];
 
   final List<BottomNavigationBarItem> _items = const [
     BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Dashboard'),
     BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Utilisateurs'),
-    BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Paramètres'),
+    // BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Paramètres'),
+    BottomNavigationBarItem(
+        icon: Icon(Icons.calendar_today), label: 'reservations'),
   ];
 
   void _logout(BuildContext context) async {
@@ -34,7 +38,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Espace Admin"),
+      appBar: AppBar(
+        title: const Text("Espace Admin"),
         actions: [
           PopupMenuButton<String>(
             onSelected: (value) {
@@ -49,7 +54,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
             icon: const Icon(Icons.account_circle),
           )
         ],
-        ),
+      ),
       body: _pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,

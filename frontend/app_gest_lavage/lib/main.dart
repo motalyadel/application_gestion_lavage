@@ -1,11 +1,13 @@
 import 'package:app_gest_lavage/core/utils/navigator.dart';
 import 'package:app_gest_lavage/l10n/generated/app_localizations.dart';
 import 'package:app_gest_lavage/presentation/pages/admin/admin_home_page.dart';
+import 'package:app_gest_lavage/presentation/pages/admin/admin_reservations_page.dart';
 import 'package:app_gest_lavage/presentation/pages/admin/admin_services_page.dart';
 import 'package:app_gest_lavage/presentation/pages/admin/manage_users_page.dart';
 import 'package:app_gest_lavage/presentation/pages/cars/cars_page.dart';
 import 'package:app_gest_lavage/presentation/pages/client/client_detail_page.dart';
 import 'package:app_gest_lavage/presentation/pages/client/client_home_page.dart';
+import 'package:app_gest_lavage/presentation/pages/client/client_reservations_page.dart';
 import 'package:app_gest_lavage/presentation/pages/client/client_services_page.dart';
 import 'package:app_gest_lavage/presentation/pages/login_page.dart';
 import 'package:app_gest_lavage/presentation/pages/register_page.dart';
@@ -14,6 +16,7 @@ import 'package:app_gest_lavage/presentation/providers/auth_controller.dart';
 import 'package:app_gest_lavage/presentation/providers/car_management_controller.dart';
 import 'package:app_gest_lavage/presentation/providers/client_management_controller.dart';
 import 'package:app_gest_lavage/presentation/providers/locale_provider.dart';
+import 'package:app_gest_lavage/presentation/providers/reservation_management_controller.dart';
 import 'package:app_gest_lavage/presentation/providers/service_management_controller.dart';
 import 'package:app_gest_lavage/presentation/providers/update_provider.dart';
 import 'package:flutter/material.dart';
@@ -35,6 +38,7 @@ void main() async {
     ChangeNotifierProvider(create: (_) => CarManagementController()),
     ChangeNotifierProvider(create: (_) => ClientUpdateController()),
     ChangeNotifierProvider(create: (_) => ServiceManagementController()),
+    ChangeNotifierProvider(create: (_) => ReservationManagementController()),
     ChangeNotifierProvider.value(value: AuthController()),
   ], child: const MyApp()));
 }
@@ -71,6 +75,8 @@ class MyApp extends StatelessWidget {
           '/client_detail': (_) => const ClientDetailPage(),
           '/admin/services': (context) => const AdminServicesPage(),
           '/client/services': (context) => const ClientServicesPage(),
+          '/admin/reservations': (context) => const AdminReservationsPage(),
+          '/client/reservations': (context) => const ClientReservationsPage(),
           '/cars': (_) => const CarsPage(),
         },
       );

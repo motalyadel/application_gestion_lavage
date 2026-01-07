@@ -29,7 +29,9 @@ class Service extends Equatable {
         duration: map['duration'] is String
             ? int.parse(map['duration'])
             : map['duration'] as int,
-        createdAt: DateTime.parse(map['created_at'] as String),
+        createdAt: map['created_at'] != null
+            ? DateTime.parse(map['created_at'] as String)
+            : DateTime.now(),
       );
     } catch (e) {
       print('Error parsing Service from map: $map, error: $e');

@@ -34,23 +34,31 @@ class ReservationManagementController extends ChangeNotifier {
   }
 
   Future<bool> addReservation({
-    required BuildContext context,
-    required String clientId,
-    required String serviceId,
-    required String carId,
-    required DateTime dateTime,
-  }) async {
+  required BuildContext context,
+  required String clientId,
+  required String clientName,
+  required String clientPhone,
+  required String serviceId,
+  required String serviceName,
+  required int serviceDuration,
+  required String carId,
+  // required DateTime dateTime,
+}) async {
     loading = true;
     error = null;
     notifyListeners();
 
     try {
-      print('Attempting to add reservation with clientId: $clientId, serviceId: $serviceId, carId: $carId, dateTime: $dateTime');
+      print('Attempting to add reservation with clientId: $clientId, serviceId: $serviceId, carId: $carId');
       final success = await _service.addReservation(
         clientId: clientId,
         serviceId: serviceId,
         carId: carId,
-        dateTime: dateTime,
+        // dateTime: dateTime, 
+        context: context, 
+        clientName: clientName, 
+        clientPhone: clientPhone, 
+        serviceName: serviceName,
       );
       if (!success) {
         throw Exception('Échec de l\'ajout de la réservation au niveau du service');

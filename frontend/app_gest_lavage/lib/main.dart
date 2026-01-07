@@ -9,6 +9,7 @@ import 'package:app_gest_lavage/presentation/pages/client/client_detail_page.dar
 import 'package:app_gest_lavage/presentation/pages/client/client_home_page.dart';
 import 'package:app_gest_lavage/presentation/pages/client/client_reservations_page.dart';
 import 'package:app_gest_lavage/presentation/pages/client/client_services_page.dart';
+import 'package:app_gest_lavage/presentation/pages/create_reservation_page.dart';
 import 'package:app_gest_lavage/presentation/pages/login_page.dart';
 import 'package:app_gest_lavage/presentation/pages/register_page.dart';
 import 'package:app_gest_lavage/presentation/pages/splash_screen.dart';
@@ -78,6 +79,7 @@ class MyApp extends StatelessWidget {
           '/admin/reservations': (context) => const AdminReservationsPage(),
           '/client/reservations': (context) => const ClientReservationsPage(),
           '/cars': (_) => const CarsPage(),
+          '/create-reservation': (context) => const CreateReservationPage(),
         },
       );
     });

@@ -107,13 +107,76 @@ class _ClientReservationsPageState extends State<ClientReservationsPage> {
                               style:
                                   const TextStyle(fontWeight: FontWeight.bold),
                             ),
-                            subtitle: Text(
-                              'Date: ${reservation.dateTime.toLocal()}\nStatut: ${reservation.status}\nVoiture: ${reservation.carId}',
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const SizedBox(height: 4),
+
+                                // 🚗 Immatriculation
+                                Text(
+                                  reservation.car?.immatriculation != null
+                                      ? 'Véhicule : ${reservation.car!.immatriculation}'
+                                      : 'Véhicule : inconnu',
+                                  style: const TextStyle(
+                                    color: AppColors.textSecondary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+
+                                const SizedBox(height: 4),
+
+                                // Position
+                                Text(
+                                  reservation.position != null
+                                      ? 'Position  : ${reservation.position}'
+                                      : 'Position non définie',
+                                  style: const TextStyle(
+                                      color: AppColors.textSecondary),
+                                ),
+
+                                const SizedBox(height: 4),
+
+                                // Expected time
+                                Text(
+                                  reservation.expectedTime != null
+                                      ? 'Heure estimée : '
+                                          '${reservation.expectedTime!.hour.toString().padLeft(2, '0')}:'
+                                          '${reservation.expectedTime!.minute.toString().padLeft(2, '0')}'
+                                      : 'Heure estimée : en attente',
+                                  style: const TextStyle(
+                                      color: AppColors.textSecondary),
+                                ),
+
+                                const SizedBox(height: 4),
+
+                                // Status
+                                Text(
+                                  'Statut : ${reservation.status}',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: reservation.status == 'waiting'
+                                        ? Colors.orange
+                                        : reservation.status == 'in_progress'
+                                            ? Colors.blue
+                                            : Colors.green,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         );
                       },
                     ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final result =
+              await Navigator.pushNamed(context, '/create-reservation');
+          if (result == true) {
+            reservationController.loadReservations(context);
+          }
+        },
+        child: const Icon(Icons.add),
+      ),
     );
   }
 }

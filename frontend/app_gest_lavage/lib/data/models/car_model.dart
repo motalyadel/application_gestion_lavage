@@ -1,4 +1,3 @@
-
 class Car {
   final String id;
   final String userId; // Changed from clientId
@@ -43,5 +42,23 @@ class Car {
   }
 
   @override
-  List<Object?> get props => [id, userId, marque, modele, immatriculation, createdAt, updatedAt];
+  List<Object?> get props =>
+      [id, userId, marque, modele, immatriculation, createdAt, updatedAt];
+}
+
+class CarLight {
+  final String id;
+  final String immatriculation;
+
+  const CarLight({
+    required this.id,
+    required this.immatriculation,
+  });
+
+  factory CarLight.fromMap(Map<String, dynamic> map) {
+    return CarLight(
+      id: map['id'] as String,
+      immatriculation: map['immatriculation'] as String,
+    );
+  }
 }

@@ -1,3 +1,4 @@
+import 'package:app_gest_lavage/core/utils/app_massenger.dart';
 import 'package:app_gest_lavage/core/utils/navigator.dart';
 import 'package:app_gest_lavage/l10n/generated/app_localizations.dart';
 import 'package:app_gest_lavage/presentation/pages/admin/admin_home_page.dart';
@@ -16,6 +17,7 @@ import 'package:app_gest_lavage/presentation/pages/splash_screen.dart';
 import 'package:app_gest_lavage/presentation/providers/auth_controller.dart';
 import 'package:app_gest_lavage/presentation/providers/car_management_controller.dart';
 import 'package:app_gest_lavage/presentation/providers/client_management_controller.dart';
+import 'package:app_gest_lavage/presentation/providers/create_reservation_provider.dart';
 import 'package:app_gest_lavage/presentation/providers/locale_provider.dart';
 import 'package:app_gest_lavage/presentation/providers/reservation_management_controller.dart';
 import 'package:app_gest_lavage/presentation/providers/service_management_controller.dart';
@@ -40,6 +42,7 @@ void main() async {
     ChangeNotifierProvider(create: (_) => ClientUpdateController()),
     ChangeNotifierProvider(create: (_) => ServiceManagementController()),
     ChangeNotifierProvider(create: (_) => ReservationManagementController()),
+    ChangeNotifierProvider(create: (_) => CreateReservationProvider()),
     ChangeNotifierProvider.value(value: AuthController()),
   ], child: const MyApp()));
 }
@@ -65,6 +68,7 @@ class MyApp extends StatelessWidget {
           GlobalCupertinoLocalizations.delegate,
         ],
         navigatorKey: AppNavigator.globalKey,
+        scaffoldMessengerKey: AppMessenger.messengerKey,
         initialRoute: '/',
         routes: {
           '/': (_) => const SplashScreen(),

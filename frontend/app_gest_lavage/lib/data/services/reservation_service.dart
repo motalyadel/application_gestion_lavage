@@ -7,8 +7,9 @@ import 'package:http/http.dart' as http;
 
 class ReservationService {
   final SupabaseClient clientSpb = Supabase.instance.client;
-  // final String _n8nBaseUrl = 'http://localhost:5678/webhook-test';
-  final String _n8nBaseUrl = 'http://10.0.2.2:5678/webhook-test';
+  final String _n8nBaseUrl = 'http://localhost:5678/webhook-test';
+  // final String _n8nBaseUrlPrd = 'http://localhost:5678/webhook';
+  // final String _n8nBaseUrl = 'http://10.0.2.2:5678/webhook-test';
 
   Future<List<Reservation>> getReservations({required bool isAdmin}) async {
     try {
@@ -72,6 +73,32 @@ class ReservationService {
       }
     } catch (e) {
       print('Erreur appel n8n: $e');
+      return false;
+    }
+  }
+
+  Future<bool> startLavage({
+    required String reservationId,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_n8nBaseUrl/start-lavage'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'reservation_id': reservationId,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['success'] == true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      print('Erreur appel n8n (start lavage): $e');
       return false;
     }
   }

@@ -1,5 +1,6 @@
 // import 'package:app_gest_lavage/data/models/reservation_model.dart';
 // import 'package:app_gest_lavage/data/models/service_model.dart';
+import 'package:app_gest_lavage/core/utils/app_massenger.dart';
 import 'package:app_gest_lavage/presentation/providers/auth_controller.dart';
 // import 'package:app_gest_lavage/presentation/providers/car_management_controller.dart';
 import 'package:app_gest_lavage/presentation/providers/reservation_management_controller.dart';
@@ -256,6 +257,9 @@ class _AdminReservationsPageState extends State<AdminReservationsPage> {
                       itemBuilder: (context, index) {
                         final reservation =
                             reservationController.reservations[index];
+                        print("reservation cars ${reservation.car}");
+                        print(reservation.car?.immatriculation);
+
                         return Card(
                           elevation: 4,
                           margin: const EdgeInsets.symmetric(vertical: 8),
@@ -269,6 +273,41 @@ class _AdminReservationsPageState extends State<AdminReservationsPage> {
                               style:
                                   const TextStyle(fontWeight: FontWeight.bold),
                             ),
+                            trailing: reservation.status == 'waiting'
+                                ? ElevatedButton.icon(
+                                    icon: const Icon(Icons.play_arrow),
+                                    label: const Text('Début Lavage'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.secondary,
+                                      foregroundColor: Colors.white,
+                                    ),
+                                    onPressed: () async {
+                                      final success =
+                                          await reservationController
+                                              .startLavage(
+                                        context: context,
+                                        reservationId: reservation.id,
+                                      );
+
+                                      if (success) {
+                                        AppMessenger.showSuccess(
+                                            '🚿 Lavage démarré avec succès');
+                                        reservationController
+                                            .loadReservations(context);
+                                      } else {
+                                        AppMessenger.showError(
+                                          reservationController.error ??
+                                              '❌ Aucune réservation en attente',
+                                        );
+                                      }
+
+                                      // if (success) {
+                                      //   reservationController
+                                      //       .loadReservations(context);
+                                      // }
+                                    },
+                                  )
+                                : null,
                             subtitle: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [

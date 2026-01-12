@@ -37,7 +37,7 @@ class ReservationService {
   }
 
   Future<bool> addReservation({
-    required BuildContext context,
+    // required BuildContext context,
     required String clientId,
     required String clientName,
     required String clientPhone,

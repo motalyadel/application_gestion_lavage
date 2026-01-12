@@ -148,28 +148,33 @@ class CreateReservationProvider extends ChangeNotifier {
   // SUBMIT
   // =============================
   Future<bool> submit(BuildContext context) async {
-    if (!canSubmit) return false;
+  if (!canSubmit) return false;
 
-    isSubmitting = true;
-    notifyListeners();
+  isSubmitting = true;
+  notifyListeners();
 
-    final auth = context.read<AuthController>();
-    final controller = context.read<ReservationManagementController>();
+  final auth = context.read<AuthController>();
+  final controller = context.read<ReservationManagementController>();
 
-    final success = await controller.addReservation(
-      context: context,
-      clientId: selectedClientId!,
-      clientName: auth.currentUser?.name ?? 'Admin',
-      clientPhone: auth.currentUser?.contact ?? '42516535',
-      serviceId: selectedServiceId!,
-      serviceName: selectedService!.name,
-      serviceDuration: selectedService!.duration,
-      carId: selectedCarId!,
-    );
+  // Déterminer si l'utilisateur est admin
+  final isAdmin = auth.currentRole == 'admin';
 
-    isSubmitting = false;
-    notifyListeners();
+  // 🔹 Appel de addReservation sans passer context
+  final success = await controller.addReservation(
+    clientId: selectedClientId ?? auth.currentUser?.id ?? '',
+    clientName: auth.currentUser?.name ?? 'admin',
+    clientPhone: auth.currentUser?.contact ?? '42516535',
+    serviceId: selectedServiceId!,
+    serviceName: selectedService!.name,
+    serviceDuration: selectedService!.duration,
+    carId: selectedCarId!,
+    isAdmin: isAdmin, // Pour recharger correctement les reservations
+  );
 
-    return success;
-  }
+  isSubmitting = false;
+  notifyListeners();
+
+  return success;
+}
+
 }

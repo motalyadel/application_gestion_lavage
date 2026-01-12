@@ -51,7 +51,7 @@ class _AdminReservationsPageState extends State<AdminReservationsPage> {
     if (!_isLoadingInitialized &&
         (reservationController.reservations.isEmpty ||
             reservationController.error != null)) {
-      reservationController.loadReservations(context);
+      reservationController.loadReservations(isAdmin: true);
       _isLoadingInitialized = true;
     }
   }
@@ -215,6 +215,7 @@ class _AdminReservationsPageState extends State<AdminReservationsPage> {
   @override
   Widget build(BuildContext context) {
     final authController = Provider.of<AuthController>(context);
+    final isAdmin = authController.currentRole == 'admin';
     // final car = Provider.of<CarManagementController>(context);
     final reservationController =
         Provider.of<ReservationManagementController>(context);
@@ -237,7 +238,7 @@ class _AdminReservationsPageState extends State<AdminReservationsPage> {
             icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: () {
               _isLoadingInitialized = false;
-              reservationController.loadReservations(context);
+              reservationController.loadReservations(isAdmin: true);
             },
             tooltip: 'Rafraîchir',
           ),
@@ -285,15 +286,15 @@ class _AdminReservationsPageState extends State<AdminReservationsPage> {
                                       final success =
                                           await reservationController
                                               .startLavage(
-                                        context: context,
-                                        reservationId: reservation.id,
+                                        // context: context,
+                                        reservationId: reservation.id, isAdmin: isAdmin,
                                       );
 
                                       if (success) {
                                         AppMessenger.showSuccess(
                                             '🚿 Lavage démarré avec succès');
                                         reservationController
-                                            .loadReservations(context);
+                                            .loadReservations(isAdmin: true);
                                       } else {
                                         AppMessenger.showError(
                                           reservationController.error ??
@@ -384,7 +385,7 @@ class _AdminReservationsPageState extends State<AdminReservationsPage> {
           final result =
               await Navigator.pushNamed(context, '/create-reservation');
           if (result == true) {
-            reservationController.loadReservations(context);
+            reservationController.loadReservations(isAdmin: true);
           }
         },
         child: const Icon(Icons.add),

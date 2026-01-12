@@ -45,7 +45,7 @@ class _ClientReservationsPageState extends State<ClientReservationsPage> {
     if (!_isLoadingInitialized &&
         (reservationController.reservations.isEmpty ||
             reservationController.error != null)) {
-      reservationController.loadReservations(context);
+      reservationController.loadReservations(isAdmin: false);
       _isLoadingInitialized = true; // Set flag after first load
     }
   }
@@ -74,7 +74,7 @@ class _ClientReservationsPageState extends State<ClientReservationsPage> {
             icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: () {
               _isLoadingInitialized = false; // Reset flag on manual refresh
-              reservationController.loadReservations(context);
+              reservationController.loadReservations(isAdmin: false);
             },
             tooltip: 'Rafraîchir',
           ),
@@ -172,7 +172,7 @@ class _ClientReservationsPageState extends State<ClientReservationsPage> {
           final result =
               await Navigator.pushNamed(context, '/create-reservation');
           if (result == true) {
-            reservationController.loadReservations(context);
+            reservationController.loadReservations(isAdmin: false);
           }
         },
         child: const Icon(Icons.add),

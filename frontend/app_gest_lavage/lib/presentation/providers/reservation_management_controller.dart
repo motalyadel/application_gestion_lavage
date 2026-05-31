@@ -62,6 +62,28 @@ class ReservationManagementController extends ChangeNotifier {
     }
   }
 
+  Future<(bool success, String? message)> finishLavage({
+    required String reservationId,
+    required bool isAdmin,
+  }) async {
+    loading = true;
+    error = null;
+    notifyListeners();
+
+    try {
+      await _service.finishLavage(reservationId: reservationId);
+      await loadReservations(isAdmin: isAdmin);
+      return (true, 'Lavage terminé avec succès ✓');
+    } catch (e) {
+      print('finishLavage failed: $e');
+      error = 'Échec de la finalisation du lavage';
+      return (false, error);
+    } finally {
+      loading = false;
+      notifyListeners();
+    }
+  }
+
   /// 🔹 Ajouter une réservation
   Future<bool> addReservation({
     required String clientId,

@@ -103,6 +103,32 @@ class ReservationService {
     }
   }
 
+  Future<bool> finishLavage({
+    required String reservationId,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_n8nBaseUrl/fin -lavage'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'reservation_id': reservationId,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['success'] == true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      print('Erreur appel n8n (fin lavage): $e');
+      return false;
+    }
+  }
+
   // Future<bool> addReservation({
   //   required String clientId,
   //   required String serviceId,

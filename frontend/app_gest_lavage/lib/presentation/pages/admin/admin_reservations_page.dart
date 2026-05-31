@@ -286,29 +286,68 @@ class _AdminReservationsPageState extends State<AdminReservationsPage> {
                                       final success =
                                           await reservationController
                                               .startLavage(
-                                        // context: context,
-                                        reservationId: reservation.id, isAdmin: isAdmin,
+                                        reservationId: reservation.id,
+                                        isAdmin: isAdmin,
                                       );
 
                                       if (success) {
                                         AppMessenger.showSuccess(
-                                            '🚿 Lavage démarré avec succès');
-                                        reservationController
-                                            .loadReservations(isAdmin: true);
+                                            '🚿 Lavage démarré');
+                                        reservationController.loadReservations(
+                                            isAdmin: true);
                                       } else {
                                         AppMessenger.showError(
                                           reservationController.error ??
-                                              '❌ Aucune réservation en attente',
+                                              'Erreur',
                                         );
                                       }
-
-                                      // if (success) {
-                                      //   reservationController
-                                      //       .loadReservations(context);
-                                      // }
                                     },
                                   )
-                                : null,
+                                : reservation.status == 'in_progress'
+                                    ? ElevatedButton.icon(
+                                        icon: const Icon(Icons.check),
+                                        label: const Text('Terminer Lavage'),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.red,
+                                          foregroundColor: Colors.white,
+                                        ),
+                                        onPressed: () async {
+                                          final (success, message) =
+                                              await reservationController
+                                                  .finishLavage(
+                                            reservationId: reservation.id,
+                                            isAdmin: isAdmin,
+                                          );
+
+                                          // if (!context.mounted) return;
+
+                                          // ScaffoldMessenger.of(context)
+                                          //     .showSnackBar(
+                                          //   SnackBar(
+                                          //     content: Text(message ?? ''),
+                                          //     backgroundColor: success
+                                          //         ? Colors.green
+                                          //         : Colors.redAccent,
+                                          //     behavior:
+                                          //         SnackBarBehavior.floating,
+                                          //   ),
+                                          // );
+
+                                          if (success) {
+                                            AppMessenger.showSuccess(
+                                                '✅ Lavage terminé');
+                                            reservationController
+                                                .loadReservations(
+                                                    isAdmin: true);
+                                          } else {
+                                            AppMessenger.showError(
+                                              reservationController.error ??
+                                                  'Erreur',
+                                            );
+                                          }
+                                        },
+                                      )
+                                    : null,
                             subtitle: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [

@@ -23,16 +23,22 @@ import 'package:app_gest_lavage/presentation/providers/reservation_management_co
 import 'package:app_gest_lavage/presentation/providers/service_management_controller.dart';
 import 'package:app_gest_lavage/presentation/providers/update_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await dotenv.load(fileName: ".env");
+
   await Supabase.initialize(
-    url: 'https://uccmvdjhmpcmfjjygwgo.supabase.co',
+    // url: 'https://yassmpfkbvpiewxviwys.supabase.co',
+    url: dotenv.env["SUPABASE_URL"]!,
     anonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjY212ZGpobXBjbWZqanlnd2dvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIzNDc2MzMsImV4cCI6MjA2NzkyMzYzM30.7xbpDdDSV2uCdXxx6QSZA01kUHD1hl9YFtrJjbfPKv4',
+        // 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlhc3NtcGZrYnZwaWV3eHZpd3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2Mjc2MDEsImV4cCI6MjA5MjIwMzYwMX0.-cgtIb6iE1WGL9uzBligEd2uaJSihxAysyI0irgvPi8',
+        dotenv.env["SUPABASE_ANON_KEY"]!,
   );
 
   runApp(MultiProvider(providers: [

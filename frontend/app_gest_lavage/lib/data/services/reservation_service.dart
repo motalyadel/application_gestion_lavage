@@ -7,8 +7,9 @@ import 'package:http/http.dart' as http;
 
 class ReservationService {
   final SupabaseClient clientSpb = Supabase.instance.client;
-  final String _n8nBaseUrl = 'http://localhost:5678/webhook-test';
+  // final String _n8nBaseUrl = 'http://localhost:5678/webhook-test';
   // final String _n8nBaseUrlPrd = 'http://localhost:5678/webhook';
+  final String _n8nBaseUrlPrd = 'http://10.0.2.2:5678/webhook';
   // final String _n8nBaseUrl = 'http://10.0.2.2:5678/webhook-test';
 
   Future<List<Reservation>> getReservations({required bool isAdmin}) async {
@@ -49,7 +50,7 @@ class ReservationService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$_n8nBaseUrl/create-reservation'),
+        Uri.parse('$_n8nBaseUrlPrd/create-reservation'),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -82,7 +83,7 @@ class ReservationService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$_n8nBaseUrl/start-lavage'),
+        Uri.parse('$_n8nBaseUrlPrd/start-lavage'),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -108,7 +109,7 @@ class ReservationService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$_n8nBaseUrl/fin -lavage'),
+        Uri.parse('$_n8nBaseUrlPrd/fin -lavage'),
         headers: {
           'Content-Type': 'application/json',
         },

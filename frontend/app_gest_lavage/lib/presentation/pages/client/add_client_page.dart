@@ -6,7 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-enum Status { active, inactive }
+enum Status { Active, Inactive }
 
 class AddClientPage extends StatefulWidget {
   const AddClientPage({super.key});

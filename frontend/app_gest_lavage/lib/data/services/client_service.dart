@@ -567,7 +567,7 @@ class ClientService extends BaseService {
         'contact': contact,
         'details': details,
         'start_date': startDate?.toIso8601String(),
-        'status': status ?? 'active',
+        'status': status ?? 'Active',
         'roles': roles ?? ['client'],
       };
       final response = await apiFetcher.post('/user', body: body, file: photo);

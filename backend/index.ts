@@ -371,7 +371,7 @@ app
         const metadata = {
           name: name || undefined,
           roles: ["client"],
-          status: status || "active",
+          status: status || "Active",
           ...(photo && { photo }), // Only include photo if provided
         };
         const { data: updatedUser, error: userError } =

@@ -1,11 +1,12 @@
 import 'package:app_gest_lavage/data/models/car_model.dart';
-import 'package:app_gest_lavage/presentation/pages/admin/dashboard_page.dart';
 import 'package:app_gest_lavage/presentation/pages/cars/add_car_page.dart';
 import 'package:app_gest_lavage/presentation/pages/cars/edit_car_page.dart';
 import 'package:app_gest_lavage/presentation/providers/auth_controller.dart';
 import 'package:app_gest_lavage/presentation/providers/car_management_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+import '../../../core/utils/app_colors.dart';
 
 class CarsPage extends StatefulWidget {
   const CarsPage({super.key});
@@ -25,13 +26,13 @@ class _CarsPageState extends State<CarsPage> {
   }
 
   Future<void> _deleteCar(BuildContext context, String carId) async {
-    final carController =
-        Provider.of<CarManagementController>(context, listen: false);
+    final carController = Provider.of<CarManagementController>(context, listen: false);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirmer la suppression'),
         content: const Text('Voulez-vous vraiment supprimer cette voiture ?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -39,8 +40,7 @@ class _CarsPageState extends State<CarsPage> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Supprimer',
-                style: TextStyle(color: AppColors.error)),
+            child: const Text('Supprimer', style: TextStyle(color: AppColors.error)),
           ),
         ],
       ),
@@ -57,8 +57,6 @@ class _CarsPageState extends State<CarsPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Voiture supprimée avec succès')),
           );
-          Navigator.pop(
-              context, true); // Return true to trigger refresh in DashboardPage
         }
       }
     }
@@ -77,77 +75,81 @@ class _CarsPageState extends State<CarsPage> {
     }
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Liste des Voitures'),
+        title: const Text('Mes Voitures'),
         backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
         elevation: 0,
-        centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
+            icon: const Icon(Icons.refresh),
             onPressed: () => carController.loadCars(context),
-            tooltip: 'Rafraîchir',
           ),
         ],
       ),
       body: carController.loading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppColors.primary))
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
           : carController.error != null
               ? Center(child: Text(carController.error!))
               : carController.cars.isEmpty
-                  ? const Center(child: Text('Aucune voiture trouvée'))
+                  ? const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.directions_car, size: 80, color: Colors.grey),
+                          SizedBox(height: 16),
+                          Text('Aucune voiture trouvée', style: TextStyle(fontSize: 18)),
+                        ],
+                      ),
+                    )
                   : ListView.builder(
-                      padding: const EdgeInsets.all(16.0),
+                      padding: const EdgeInsets.all(16),
                       itemCount: carController.cars.length,
                       itemBuilder: (context, index) {
                         final car = carController.cars[index];
                         return Card(
                           elevation: 4,
-                          margin: const EdgeInsets.symmetric(vertical: 8),
+                          margin: const EdgeInsets.only(bottom: 12),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                           child: ListTile(
-                            leading: const Icon(Icons.directions_car,
-                                color: AppColors.primary),
+                            contentPadding: const EdgeInsets.all(16),
+                            leading: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(Icons.directions_car, color: AppColors.primary, size: 32),
+                            ),
                             title: Text(
-                              '${car.marque ?? 'Inconnu'} ${car.modele ?? 'Inconnu'}',
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold),
+                              '${car.marque ?? 'Inconnu'} ${car.modele ?? ''}'.trim(),
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                             ),
                             subtitle: Text(
-                              'Immatriculation: ${car.immatriculation}${authController.currentRole == 'admin' ? '\nUser ID: ${car.userId}' : ''}',
+                              'Immatriculation: ${car.immatriculation}',
+                              style: TextStyle(color: AppColors.textSecondary),
                             ),
                             trailing: PopupMenuButton<String>(
-                              icon: const Icon(Icons.more_vert,
-                                  color: AppColors.primary),
+                              icon: const Icon(Icons.more_vert),
                               onSelected: (value) async {
                                 if (value == 'edit') {
                                   final result = await Navigator.push(
                                     context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          EditCarPage(car: car),
-                                    ),
+                                    MaterialPageRoute(builder: (_) => EditCarPage(car: car)),
                                   );
-                                  if (result == true) {
-                                    carController.loadCars(context);
-                                    Navigator.pop(context,
-                                        true); // Return true to trigger refresh in DashboardPage
-                                  }
+                                  if (result == true) carController.loadCars(context);
                                 } else if (value == 'delete') {
                                   await _deleteCar(context, car.id);
                                 }
                               },
                               itemBuilder: (context) => [
-                                const PopupMenuItem(
-                                  value: 'edit',
-                                  child: Text('Modifier'),
-                                ),
+                                const PopupMenuItem(value: 'edit', child: Text('Modifier')),
                                 const PopupMenuItem(
                                   value: 'delete',
-                                  child: Text('Supprimer',
-                                      style: TextStyle(color: AppColors.error)),
+                                  child: Text('Supprimer', style: TextStyle(color: AppColors.error)),
                                 ),
                               ],
                             ),
@@ -159,11 +161,9 @@ class _CarsPageState extends State<CarsPage> {
         onPressed: () async {
           final result = await Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const AddCarPage()),
+            MaterialPageRoute(builder: (_) => const AddCarPage()),
           );
-          if (result == true) {
-            carController.loadCars(context);
-          }
+          if (result == true) carController.loadCars(context);
         },
         backgroundColor: AppColors.primary,
         child: const Icon(Icons.add),

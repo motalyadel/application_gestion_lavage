@@ -4,18 +4,7 @@ import 'package:app_gest_lavage/presentation/providers/reservation_management_co
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class AppColors {
-  static const Color primary = Color.fromARGB(255, 25, 118, 210);
-  static const Color primaryDark = Color.fromARGB(255, 13, 71, 161);
-  static const Color primaryLight = Color.fromARGB(255, 187, 222, 251);
-  static const Color secondary = Color.fromARGB(255, 67, 160, 71);
-  static const Color accent = Color.fromARGB(255, 251, 140, 0);
-  static const Color error = Color.fromARGB(255, 229, 57, 53);
-  static const Color background = Color.fromARGB(255, 245, 245, 245);
-  static const Color surface = Color.fromARGB(255, 255, 255, 255);
-  static const Color textPrimary = Color.fromARGB(255, 67, 37, 37);
-  static const Color textSecondary = Color.fromARGB(255, 117, 117, 117);
-}
+import '../../../core/utils/app_colors.dart';
 
 class ClientReservationsPage extends StatefulWidget {
   const ClientReservationsPage({super.key});
@@ -25,7 +14,7 @@ class ClientReservationsPage extends StatefulWidget {
 }
 
 class _ClientReservationsPageState extends State<ClientReservationsPage> {
-  bool _isLoadingInitialized = false; // Flag to prevent multiple initial loads
+  bool _isLoadingInitialized = false;
 
   @override
   void initState() {
@@ -40,13 +29,12 @@ class _ClientReservationsPageState extends State<ClientReservationsPage> {
   }
 
   void _loadReservationsIfNeeded() {
-    final reservationController =
+    final controller =
         Provider.of<ReservationManagementController>(context, listen: false);
     if (!_isLoadingInitialized &&
-        (reservationController.reservations.isEmpty ||
-            reservationController.error != null)) {
-      reservationController.loadReservations(isAdmin: false);
-      _isLoadingInitialized = true; // Set flag after first load
+        (controller.reservations.isEmpty || controller.error != null)) {
+      controller.loadReservations(isAdmin: false);
+      _isLoadingInitialized = true;
     }
   }
 
@@ -64,19 +52,19 @@ class _ClientReservationsPageState extends State<ClientReservationsPage> {
     }
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Mes Réservations'),
         backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
         elevation: 0,
-        centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
+            icon: const Icon(Icons.refresh),
             onPressed: () {
-              _isLoadingInitialized = false; // Reset flag on manual refresh
+              _isLoadingInitialized = false;
               reservationController.loadReservations(isAdmin: false);
             },
-            tooltip: 'Rafraîchir',
           ),
         ],
       ),
@@ -87,45 +75,50 @@ class _ClientReservationsPageState extends State<ClientReservationsPage> {
                   reservationController.reservations.isEmpty
               ? Center(child: Text(reservationController.error!))
               : reservationController.reservations.isEmpty
-                  ? const Center(child: Text('Aucune réservation trouvée'))
+                  ? const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.calendar_today,
+                              size: 80, color: Colors.grey),
+                          SizedBox(height: 16),
+                          Text('Aucune réservation trouvée',
+                              style: TextStyle(fontSize: 18)),
+                          Text('Vous n\'avez pas encore de réservation',
+                              style: TextStyle(color: AppColors.textSecondary)),
+                        ],
+                      ),
+                    )
                   : ListView.builder(
-                      padding: const EdgeInsets.all(16.0),
+                      padding: const EdgeInsets.all(16),
                       itemCount: reservationController.reservations.length,
                       itemBuilder: (context, index) {
                         final reservation =
                             reservationController.reservations[index];
                         return Card(
                           elevation: 4,
-                          margin: const EdgeInsets.symmetric(vertical: 8),
+                          margin: const EdgeInsets.only(bottom: 12),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                          child: ListTile(
-                            leading: const Icon(Icons.calendar_today,
-                                color: AppColors.primary),
-                            title: Text(
-                              reservation.service?.name ?? 'Service inconnu',
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            subtitle: Column(
+                              borderRadius: BorderRadius.circular(16)),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const SizedBox(height: 4),
-
-                                // 🚗 Immatriculation
-                                Text(
-                                  reservation.car?.immatriculation != null
-                                      ? 'Véhicule : ${reservation.car!.immatriculation}'
-                                      : 'Véhicule : inconnu',
-                                  style: const TextStyle(
-                                    color: AppColors.textSecondary,
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      reservation.service?.name ?? 'Service',
+                                      style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                    _buildStatusChip(reservation.status),
+                                  ],
                                 ),
-
-                                const SizedBox(height: 4),
-
-                                // Position
+                                const SizedBox(height: 12),
                                 Text(
                                   reservation.position != null
                                       ? 'Position  : ${reservation.position}'
@@ -134,8 +127,9 @@ class _ClientReservationsPageState extends State<ClientReservationsPage> {
                                       color: AppColors.textSecondary),
                                 ),
 
+                                Text(
+                                    'Véhicule : ${reservation.car?.immatriculation ?? 'Inconnu'}'),
                                 const SizedBox(height: 4),
-
                                 // Expected time
                                 Text(
                                   reservation.expectedTime != null
@@ -177,6 +171,30 @@ class _ClientReservationsPageState extends State<ClientReservationsPage> {
         },
         child: const Icon(Icons.add),
       ),
+    );
+  }
+
+  Widget _buildStatusChip(String status) {
+    Color color;
+    switch (status.toLowerCase()) {
+      case 'confirmed':
+        color = Colors.green;
+        break;
+      case 'pending':
+        color = Colors.orange;
+        break;
+      case 'completed':
+        color = Colors.blue;
+        break;
+      default:
+        color = Colors.grey;
+    }
+
+    return Chip(
+      label: Text(status.toUpperCase(),
+          style: const TextStyle(fontSize: 12, color: Colors.white)),
+      backgroundColor: color,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
     );
   }
 }

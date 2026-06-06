@@ -3,18 +3,9 @@ import 'package:app_gest_lavage/presentation/providers/auth_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class AppColors {
-  static const Color primary = Color.fromARGB(255, 25, 118, 210);
-  static const Color primaryDark = Color.fromARGB(255, 13, 71, 161);
-  static const Color primaryLight = Color.fromARGB(255, 187, 222, 251);
-  static const Color secondary = Color.fromARGB(255, 67, 160, 71);
-  static const Color accent = Color.fromARGB(255, 251, 140, 0);
-  static const Color error = Color.fromARGB(255, 229, 57, 53);
-  static const Color background = Color.fromARGB(255, 245, 245, 245);
-  static const Color surface = Color.fromARGB(255, 255, 255, 255);
-  static const Color textPrimary = Color.fromARGB(255, 67, 37, 37);
-  static const Color textSecondary = Color.fromARGB(255, 117, 117, 117);
-}
+import '../../../core/utils/app_colors.dart';
+
+
 
 class AccueilPage extends StatefulWidget {
   const AccueilPage({super.key});
@@ -39,8 +30,10 @@ class _AccueilPageState extends State<AccueilPage> {
     setState(() => _isLoading = true);
     final authController = Provider.of<AuthController>(context, listen: false);
     final carService = CarService();
+
     try {
-      final cars = await carService.getCars(isAdmin: authController.currentRole == 'admin');
+      final cars = await carService.getCars(
+          isAdmin: authController.currentRole == 'admin');
       if (mounted) {
         setState(() {
           _totalCars = cars.length;
@@ -61,7 +54,9 @@ class _AccueilPageState extends State<AccueilPage> {
   @override
   Widget build(BuildContext context) {
     final authController = Provider.of<AuthController>(context);
-    if (authController.currentRole == null || authController.currentUser == null) {
+
+    if (authController.currentRole == null ||
+        authController.currentUser == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Navigator.pushReplacementNamed(context, '/login');
       });
@@ -70,232 +65,224 @@ class _AccueilPageState extends State<AccueilPage> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text(
-          'Accueil',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: AppColors.primary,
-        elevation: 0,
-        centerTitle: true,
-        actions: [
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              if (value == 'profile') {
-                Navigator.pushNamed(context, '/profile');
-              } else if (value == 'logout') {
-                authController.signOut();
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'profile',
-                child: Text('Mon Profil'),
+      body: CustomScrollView(
+        slivers: [
+          // AppBar moderne
+          SliverAppBar(
+            expandedHeight: 110,
+            floating: false,
+            pinned: true,
+            backgroundColor: AppColors.primary,
+            flexibleSpace: FlexibleSpaceBar(
+              title: const Text(
+                'Accueil',
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
-              const PopupMenuItem(
-                value: 'logout',
-                child: Text('Déconnexion'),
+              centerTitle: true,
+              background: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppColors.primary, AppColors.primaryDark],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+              ),
+            ),
+            actions: [
+              PopupMenuButton<String>(
+                onSelected: (value) {
+                  if (value == 'profile') {
+                    Navigator.pushNamed(context, '/profile');
+                  } else if (value == 'logout') {
+                    authController.signOut();
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'profile',
+                    child: Text('Mon Profil'),
+                  ),
+                  const PopupMenuItem(
+                    value: 'logout',
+                    child: Text('Déconnexion'),
+                  ),
+                ],
+                icon: const Icon(Icons.account_circle, color: Colors.white),
               ),
             ],
-            icon: const Icon(Icons.account_circle, color: Colors.white),
           ),
-        ],
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
+
+          SliverPadding(
+            padding: const EdgeInsets.all(16.0),
+            sliver: SliverToBoxAdapter(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Welcome Message
                   Text(
-                    'Bienvenue, ${authController.currentUser!.name ?? 'Client'}',
+                    'Bienvenue, ${authController.currentUser!.name ?? 'Client'} 👋',
                     style: const TextStyle(
-                      fontSize: 24,
+                      fontSize: 28,
                       fontWeight: FontWeight.bold,
                       color: AppColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
+                  const SizedBox(height: 6),
+                  const Text(
                     'Gérez vos voitures facilement',
                     style: TextStyle(
                       fontSize: 16,
                       color: AppColors.textSecondary,
                     ),
                   ),
-                  const SizedBox(height: 24),
-                  Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    color: AppColors.surface,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Résumé',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          _buildStatCard(
-                            icon: Icons.directions_car,
-                            label: 'Mes Voitures',
-                            value: _totalCars.toString(),
-                            color: AppColors.primary,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  const SizedBox(height: 32),
+
+                  // Stat Card
+                  _buildModernStatCard(
+                    icon: Icons.directions_car,
+                    label: 'Mes Voitures',
+                    value: _totalCars.toString(),
                     color: AppColors.primary,
-                    child: InkWell(
-                      onTap: () {
-                        Navigator.pushNamed(context, '/cars');
-                      },
-                      borderRadius: BorderRadius.circular(12),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.directions_car,
-                              color: Colors.white,
-                              size: 32,
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: const [
-                                  Text(
-                                    'Mes Voitures',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  SizedBox(height: 4),
-                                  Text(
-                                    'Voir et gérer vos voitures',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: AppColors.primaryLight,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Icon(
-                              Icons.arrow_forward,
-                              color: Colors.white,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
                   ),
-                  const SizedBox(height: 16),
-                  Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    color: AppColors.primary,
-                    child: InkWell(
-                      onTap: () {
-                        Navigator.pushNamed(context, '/client/services');
-                      },
-                      borderRadius: BorderRadius.circular(12),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.build,
-                              color: Colors.white,
-                              size: 32,
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: const [
-                                  Text(
-                                    'Nos Services',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  SizedBox(height: 4),
-                                  Text(
-                                    'Voir les services de lavage disponibles',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: AppColors.primaryLight,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Icon(
-                              Icons.arrow_forward,
-                              color: Colors.white,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+
+                  const SizedBox(height: 32),
+
+                  // Action Cards
+                  _buildActionCard(
+                    title: 'Mes Voitures',
+                    subtitle: 'Voir et gérer vos véhicules',
+                    icon: Icons.directions_car,
+                    onTap: () => Navigator.pushNamed(context, '/cars'),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  _buildActionCard(
+                    title: 'Nos Services',
+                    subtitle: 'Découvrir nos prestations de lavage',
+                    icon: Icons.build,
+                    onTap: () =>
+                        Navigator.pushNamed(context, '/client/services'),
                   ),
                 ],
               ),
             ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildStatCard({
+  Widget _buildModernStatCard({
     required IconData icon,
     required String label,
     required String value,
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              color: color,
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 36),
+          ),
+          const SizedBox(width: 20),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 42,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                ),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildActionCard({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: AppColors.primary, size: 32),
+              ),
+              const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.arrow_forward_ios, size: 20, color: Colors.grey),
+            ],
+          ),
+        ),
       ),
     );
   }

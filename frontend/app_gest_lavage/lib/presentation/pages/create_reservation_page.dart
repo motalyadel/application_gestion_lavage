@@ -5,10 +5,7 @@ import 'package:app_gest_lavage/presentation/providers/create_reservation_provid
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class AppColors {
-  static const Color primary = Color.fromARGB(255, 25, 118, 210);
-  static const Color error = Color.fromARGB(255, 229, 57, 53);
-}
+
 
 class CreateReservationPage extends StatefulWidget {
   const CreateReservationPage({super.key});

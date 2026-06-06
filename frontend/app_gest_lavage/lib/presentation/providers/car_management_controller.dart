@@ -37,7 +37,7 @@ class CarManagementController extends ChangeNotifier {
     }
   }
 
-  Future<void> addCar({
+  Future<bool> addCar({
     required BuildContext context,
     required String userId,
     String? marque,
@@ -57,6 +57,7 @@ class CarManagementController extends ChangeNotifier {
       );
       if (success) {
         await loadCars(context);
+        return true;
       } else {
         throw Exception('Échec de l\'ajout de la voiture');
       }
@@ -64,10 +65,11 @@ class CarManagementController extends ChangeNotifier {
       error = 'Échec de l\'ajout de la voiture : $e';
       loading = false;
       notifyListeners();
+      return false;
     }
   }
 
-  Future<void> updateCar({
+  Future<bool> updateCar({
     required BuildContext context,
     required String id,
     String? marque,
@@ -77,7 +79,6 @@ class CarManagementController extends ChangeNotifier {
     loading = true;
     error = null;
     notifyListeners();
-
     try {
       final success = await _service.updateCar(
         id: id,
@@ -87,6 +88,7 @@ class CarManagementController extends ChangeNotifier {
       );
       if (success) {
         await loadCars(context);
+        return true;
       } else {
         throw Exception('Échec de la mise à jour de la voiture');
       }
@@ -94,6 +96,7 @@ class CarManagementController extends ChangeNotifier {
       error = 'Échec de la mise à jour de la voiture : $e';
       loading = false;
       notifyListeners();
+      return false;
     }
   }
 

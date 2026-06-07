@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 
 class ReservationManagementController extends ChangeNotifier {
   final ReservationService _service = ReservationService();
+  final SupabaseClient clientSpb = Supabase.instance.client;
 
   List<Reservation> reservations = [];
   bool loading = false;
@@ -62,7 +63,8 @@ class ReservationManagementController extends ChangeNotifier {
     }
   }
 
-  Future<(bool success, String? message)> finishLavage({
+  /// 🔹 Terminer le lavage (Version finale propre)
+  Future<bool> finishLavage({
     required String reservationId,
     required bool isAdmin,
   }) async {
@@ -71,13 +73,25 @@ class ReservationManagementController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _service.finishLavage(reservationId: reservationId);
+      print('🔄 [finishLavage] Début - Reservation ID: $reservationId');
+
+      // Appel à ton endpoint n8n
+      final success = await _service.finishLavage(reservationId: reservationId);
+
+      if (!success) {
+        throw Exception('n8n a refusé la finalisation du lavage');
+      }
+
+      print('✅ [finishLavage] Succès via n8n');
+
+      // Recharge les données pour rafraîchir l'UI
       await loadReservations(isAdmin: isAdmin);
-      return (true, 'Lavage terminé avec succès ✓');
+
+      return true;
     } catch (e) {
-      print('finishLavage failed: $e');
+      print('❌ [finishLavage] Erreur: $e');
       error = 'Échec de la finalisation du lavage';
-      return (false, error);
+      return false;
     } finally {
       loading = false;
       notifyListeners();

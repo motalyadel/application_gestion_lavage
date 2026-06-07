@@ -109,7 +109,7 @@ class ReservationService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$_n8nBaseUrlPrd/fin -lavage'),
+        Uri.parse('$_n8nBaseUrlPrd/finish-lavage'),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -117,15 +117,22 @@ class ReservationService {
           'reservation_id': reservationId,
         }),
       );
+      print(
+          '📥 [Service] Réponse finishLavage - Status: ${response.statusCode}');
+      print('📥 [Service] Body: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return data['success'] == true;
+        final success = data['success'] == true || data['success'] == 'true';
+
+        print('📌 [Service] Success evaluation: $success');
+        return success;
       } else {
+        print('❌ [Service] Status non 200');
         return false;
       }
     } catch (e) {
-      print('Erreur appel n8n (fin lavage): $e');
+      print('❌ [Service] Exception finishLavage: $e');
       return false;
     }
   }

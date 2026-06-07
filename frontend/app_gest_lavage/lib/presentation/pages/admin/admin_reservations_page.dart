@@ -11,7 +11,6 @@ import 'package:provider/provider.dart';
 import '../../../core/utils/app_colors.dart';
 // import 'package:supabase_flutter/supabase_flutter.dart';
 
-
 class AdminReservationsPage extends StatefulWidget {
   const AdminReservationsPage({super.key});
 
@@ -302,7 +301,7 @@ class _AdminReservationsPageState extends State<AdminReservationsPage> {
                                           foregroundColor: Colors.white,
                                         ),
                                         onPressed: () async {
-                                          final (success, message) =
+                                          final success =
                                               await reservationController
                                                   .finishLavage(
                                             reservationId: reservation.id,

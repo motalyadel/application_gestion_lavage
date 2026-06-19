@@ -40,7 +40,7 @@ class _AdminReservationsPageState extends State<AdminReservationsPage> {
     if (!_isLoadingInitialized &&
         (reservationController.reservations.isEmpty ||
             reservationController.error != null)) {
-      reservationController.loadReservations(isAdmin: true);
+      reservationController.loadReservationsJr(isAdmin: true);
       _isLoadingInitialized = true;
     }
   }
@@ -227,7 +227,7 @@ class _AdminReservationsPageState extends State<AdminReservationsPage> {
             icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: () {
               _isLoadingInitialized = false;
-              reservationController.loadReservations(isAdmin: true);
+              reservationController.loadReservationsJr(isAdmin: true);
             },
             tooltip: 'Rafraîchir',
           ),
@@ -282,7 +282,7 @@ class _AdminReservationsPageState extends State<AdminReservationsPage> {
                                       if (success) {
                                         AppMessenger.showSuccess(
                                             '🚿 Lavage démarré');
-                                        reservationController.loadReservations(
+                                        reservationController.loadReservationsJr(
                                             isAdmin: true);
                                       } else {
                                         AppMessenger.showError(
@@ -326,7 +326,7 @@ class _AdminReservationsPageState extends State<AdminReservationsPage> {
                                             AppMessenger.showSuccess(
                                                 '✅ Lavage terminé');
                                             reservationController
-                                                .loadReservations(
+                                                .loadReservationsJr(
                                                     isAdmin: true);
                                           } else {
                                             AppMessenger.showError(
@@ -413,7 +413,7 @@ class _AdminReservationsPageState extends State<AdminReservationsPage> {
           final result =
               await Navigator.pushNamed(context, '/create-reservation');
           if (result == true) {
-            reservationController.loadReservations(isAdmin: true);
+            reservationController.loadReservationsJr(isAdmin: true);
           }
         },
         child: const Icon(Icons.add),

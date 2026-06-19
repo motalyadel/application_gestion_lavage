@@ -17,6 +17,7 @@ class CreateReservationProvider extends ChangeNotifier {
   bool isLoading = false;
   bool isSubmitting = false;
   String? error;
+  String? businessHoursMessage;
 
   String? selectedClientId;
   String? selectedServiceId;
@@ -53,6 +54,7 @@ class CreateReservationProvider extends ChangeNotifier {
         selectedClientId = userId;
         await loadCarsForClient(userId);
       }
+      checkBusinessHours();
     } catch (e) {
       error = e.toString();
     }
@@ -148,33 +150,50 @@ class CreateReservationProvider extends ChangeNotifier {
   // SUBMIT
   // =============================
   Future<bool> submit(BuildContext context) async {
-  if (!canSubmit) return false;
+    if (!canSubmit) return false;
 
-  isSubmitting = true;
-  notifyListeners();
+    isSubmitting = true;
+    notifyListeners();
 
-  final auth = context.read<AuthController>();
-  final controller = context.read<ReservationManagementController>();
+    final auth = context.read<AuthController>();
+    final controller = context.read<ReservationManagementController>();
 
-  // Déterminer si l'utilisateur est admin
-  final isAdmin = auth.currentRole == 'admin';
+    // Déterminer si l'utilisateur est admin
+    final isAdmin = auth.currentRole == 'admin';
 
-  // 🔹 Appel de addReservation sans passer context
-  final success = await controller.addReservation(
-    clientId: selectedClientId ?? auth.currentUser?.id ?? '',
-    clientName: auth.currentUser?.name ?? 'admin',
-    clientPhone: auth.currentUser?.contact ?? '42516535',
-    serviceId: selectedServiceId!,
-    serviceName: selectedService!.name,
-    serviceDuration: selectedService!.duration,
-    carId: selectedCarId!,
-    isAdmin: isAdmin, // Pour recharger correctement les reservations
-  );
+    // 🔹 Appel de addReservation sans passer context
+    final success = await controller.addReservation(
+      clientId: selectedClientId ?? auth.currentUser?.id ?? '',
+      clientName: auth.currentUser?.name ?? 'admin',
+      clientPhone: auth.currentUser?.contact ?? '42516535',
+      serviceId: selectedServiceId!,
+      serviceName: selectedService!.name,
+      serviceDuration: selectedService!.duration,
+      carId: selectedCarId!,
+      isAdmin: isAdmin, // Pour recharger correctement les reservations
+    );
 
-  isSubmitting = false;
-  notifyListeners();
+    isSubmitting = false;
+    notifyListeners();
 
-  return success;
-}
+    return success;
+  }
 
+// VALIDATION HEURES
+// =============================
+  bool get isWithinBusinessHours {
+    final now = DateTime.now();
+    final hour = now.hour;
+    return hour >= 8 && hour < 23; // 8h00 à 22h59
+  }
+
+  void checkBusinessHours() {
+    if (!isWithinBusinessHours) {
+      businessHoursMessage =
+          "Les réservations ne sont possibles qu'entre 08h00 et 23h00";
+    } else {
+      businessHoursMessage = null;
+    }
+    notifyListeners();
+  }
 }

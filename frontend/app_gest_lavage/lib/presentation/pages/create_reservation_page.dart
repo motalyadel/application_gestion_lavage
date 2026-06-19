@@ -5,8 +5,6 @@ import 'package:app_gest_lavage/presentation/providers/create_reservation_provid
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-
-
 class CreateReservationPage extends StatefulWidget {
   const CreateReservationPage({super.key});
 
@@ -57,6 +55,22 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
             body: SafeArea(
               child: Column(
                 children: [
+                  // === MESSAGE D'AVERTISSEMENT HORAIRE ===
+                  if (provider.businessHoursMessage != null)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      color: Colors.orange.shade100,
+                      child: Text(
+                        provider.businessHoursMessage!,
+                        style: const TextStyle(
+                          color: Colors.orange,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+
                   /// 🔹 CONTENU SCROLLABLE
                   Expanded(
                     child: SingleChildScrollView(
@@ -166,7 +180,8 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                 ),
-                                onPressed: provider.canSubmit
+                                onPressed: provider.canSubmit &&
+                                        provider.isWithinBusinessHours
                                     ? () async {
                                         final success =
                                             await provider.submit(context);

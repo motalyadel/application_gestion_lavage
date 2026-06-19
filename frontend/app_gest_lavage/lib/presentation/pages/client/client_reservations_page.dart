@@ -33,7 +33,7 @@ class _ClientReservationsPageState extends State<ClientReservationsPage> {
         Provider.of<ReservationManagementController>(context, listen: false);
     if (!_isLoadingInitialized &&
         (controller.reservations.isEmpty || controller.error != null)) {
-      controller.loadReservations(isAdmin: false);
+      controller.loadReservationsJr(isAdmin: false);
       _isLoadingInitialized = true;
     }
   }
@@ -63,7 +63,7 @@ class _ClientReservationsPageState extends State<ClientReservationsPage> {
             icon: const Icon(Icons.refresh),
             onPressed: () {
               _isLoadingInitialized = false;
-              reservationController.loadReservations(isAdmin: false);
+              reservationController.loadReservationsJr(isAdmin: false);
             },
           ),
         ],
@@ -166,7 +166,7 @@ class _ClientReservationsPageState extends State<ClientReservationsPage> {
           final result =
               await Navigator.pushNamed(context, '/create-reservation');
           if (result == true) {
-            reservationController.loadReservations(isAdmin: false);
+            reservationController.loadReservationsJr(isAdmin: false);
           }
         },
         child: const Icon(Icons.add),

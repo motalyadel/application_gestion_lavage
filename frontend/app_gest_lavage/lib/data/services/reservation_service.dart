@@ -12,14 +12,48 @@ class ReservationService {
   final String _n8nBaseUrlPrd = 'http://10.0.2.2:5678/webhook';
   // final String _n8nBaseUrl = 'http://10.0.2.2:5678/webhook-test';
 
-  Future<List<Reservation>> getReservations({required bool isAdmin}) async {
+  // Future<List<Reservation>> getReservations({required bool isAdmin}) async {
+  //   try {
+  //     final userId = clientSpb.auth.currentUser?.id;
+  //     print('Fetching reservations for user: $userId, isAdmin: $isAdmin');
+  //     final query = clientSpb
+  //         .from('reservations')
+  //         .select(
+  //             'id, client_id, service_id, car_id, position, expected_time, status, created_at, car:cars(id, user_id, marque, modele, immatriculation, created_at, updated_at ), service:services(id, name, price, duration)')
+  //         .order('created_at', ascending: true);
+
+  //     print('Executing query: ${query.toString()}');
+  //     final response = await query;
+  //     print('Reservations response raw: $response');
+
+  //     if (response.isEmpty) {
+  //       print('No reservations found for user: $userId, isAdmin: $isAdmin');
+  //     }
+
+  //     return response.map((map) => Reservation.fromMap(map)).toList();
+  //   } catch (e) {
+  //     print('getReservations() failed with exception: $e ');
+  //     rethrow;
+  //   }
+  // }
+
+  Future<List<Reservation>> getReservationsJr({required bool isAdmin}) async {
     try {
       final userId = clientSpb.auth.currentUser?.id;
       print('Fetching reservations for user: $userId, isAdmin: $isAdmin');
+
+      // Filtre pour aujourd'hui seulement
+      final now = DateTime.now();
+      final startOfDay = DateTime(now.year, now.month, now.day);
+      final endOfDay = startOfDay.add(const Duration(days: 1));
+
       final query = clientSpb
           .from('reservations')
           .select(
               'id, client_id, service_id, car_id, position, expected_time, status, created_at, car:cars(id, user_id, marque, modele, immatriculation, created_at, updated_at ), service:services(id, name, price, duration)')
+          .gte('created_at',
+              startOfDay.toIso8601String()) // À partir de 00:00 aujourd'hui
+          .lt('created_at', endOfDay.toIso8601String()) // Avant 00:00 demain
           .order('created_at', ascending: true);
 
       print('Executing query: ${query.toString()}');
@@ -27,7 +61,7 @@ class ReservationService {
       print('Reservations response raw: $response');
 
       if (response.isEmpty) {
-        print('No reservations found for user: $userId, isAdmin: $isAdmin');
+        print('No reservations found for today');
       }
 
       return response.map((map) => Reservation.fromMap(map)).toList();

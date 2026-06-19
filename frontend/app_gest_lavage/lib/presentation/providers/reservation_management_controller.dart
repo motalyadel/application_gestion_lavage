@@ -17,17 +17,34 @@ class ReservationManagementController extends ChangeNotifier {
   bool loading = false;
   String? error;
 
-  /// 🔹 Charger les réservations pour admin ou client
-  Future<void> loadReservations({required bool isAdmin}) async {
+  // /// 🔹 Charger les réservations pour admin ou client
+  // Future<void> loadReservations({required bool isAdmin}) async {
+  //   loading = true;
+  //   error = null;
+  //   notifyListeners();
+
+  //   try {
+  //     reservations = await _service.getReservationsJr(isAdmin: isAdmin);
+  //   } catch (e) {
+  //     print('loadReservations() failed: $e');
+  //     error = 'Échec du chargement des réservations';
+  //   } finally {
+  //     loading = false;
+  //     notifyListeners();
+  //   }
+  // }
+
+  Future<void> loadReservationsJr({required bool isAdmin}) async {
     loading = true;
     error = null;
     notifyListeners();
 
     try {
-      reservations = await _service.getReservations(isAdmin: isAdmin);
+      reservations = await _service.getReservationsJr(isAdmin: isAdmin);
+      print('Reservations loaded today: ${reservations.length}');
     } catch (e) {
-      print('loadReservations() failed: $e');
-      error = 'Échec du chargement des réservations';
+      print('loadReservationsJr() failed: $e');
+      error = 'Échec du chargement des réservations du jour : $e';
     } finally {
       loading = false;
       notifyListeners();
@@ -51,7 +68,7 @@ class ReservationManagementController extends ChangeNotifier {
       }
 
       // Recharge les réservations après démarrage
-      await loadReservations(isAdmin: isAdmin);
+      await loadReservationsJr(isAdmin: isAdmin);
       return true;
     } catch (e) {
       print('startLavage() failed: $e');
@@ -85,7 +102,7 @@ class ReservationManagementController extends ChangeNotifier {
       print('✅ [finishLavage] Succès via n8n');
 
       // Recharge les données pour rafraîchir l'UI
-      await loadReservations(isAdmin: isAdmin);
+      await loadReservationsJr(isAdmin: isAdmin);
 
       return true;
     } catch (e) {
@@ -129,7 +146,7 @@ class ReservationManagementController extends ChangeNotifier {
       }
 
       // Recharge toutes les réservations après ajout
-      await loadReservations(isAdmin: isAdmin);
+      await loadReservationsJr(isAdmin: isAdmin);
       return true;
     } catch (e) {
       print('addReservation() failed: $e');

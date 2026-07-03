@@ -580,98 +580,31 @@ class ClientService extends BaseService {
   }
 
   Future<bool> updateClient({
-    required String userId,
-    required String role,
-    String? name,
-    String? contact,
-    String? details,
-    Status? status,
-    String? email,
-    String? photo,
-  }) async {
-    try {
-      final currentUser = clientSpb.auth.currentUser;
-      final isSelf = currentUser?.id == userId;
-      final isAdmin = currentUser != null &&
-          (await clientSpb
-                  .from('user_roles')
-                  .select('app_role(id)')
-                  .eq('user_id', currentUser.id)
-                  .single())['app_role']['id'] ==
-              'admin';
+  required String userId,
+  String? name,
+  String? contact,
+  String? details,
+  Status? status,
+  DateTime? startDate,
+  XFile? photo,
+}) async {
+  try {
+    final body = {
+      'id': userId,
+      if (name != null && name.trim().isNotEmpty) 'name': name.trim(),
+      if (status != null) 'status': status.value,
+      if (contact != null && contact.trim().isNotEmpty) 'contact': contact.trim(),
+      if (details != null && details.trim().isNotEmpty) 'details': details.trim(),
+      if (startDate != null) 'start_date': startDate.toIso8601String(),
+    };
 
-      final userUpdates = <String, dynamic>{};
-      final clientUpdates = <String, dynamic>{};
-      if ((email != null || name != null) && isSelf) {
-        final attributes = UserAttributes(
-          email: email?.trim(),
-          data: name != null ? {'name': name.trim()} : null,
-        );
-        await clientSpb.auth.updateUser(attributes);
-      }
-      if (name != null && name.trim().isNotEmpty)
-        userUpdates['name'] = name.trim();
-      if (status != null && isAdmin) userUpdates['status'] = status.value;
-
-      if (role == 'client') {
-        if (contact != null && contact.trim().isNotEmpty) {
-          clientUpdates['contact'] = contact.trim();
-        }
-        if (details != null && details.trim().isNotEmpty)
-          clientUpdates['details'] = details.trim();
-        if (photo != null && photo.isNotEmpty) {
-          clientUpdates['photo'] = photo;
-        }
-      }
-      print('User updates: $userUpdates');
-      print('Client updates: $clientUpdates');
-
-      // Update users table
-      bool userSuccess = true;
-      if (userUpdates.isNotEmpty) {
-        try {
-          final userResult = await clientSpb
-              .from(AuthModel.usersTableName)
-              .update(userUpdates)
-              .eq('id', userId);
-          final userCount = userResult?.count ?? 0;
-          print('Users updated: $userCount rows');
-          userSuccess =
-              true; // Toujours success pour users (même si 0, pas d'erreur critique)
-        } catch (e) {
-          print('User update failed: $e');
-          userSuccess = false;
-        }
-      }
-
-      // Upsert client table: Use upsert with id
-      bool clientSuccess = true;
-      if (clientUpdates.isNotEmpty) {
-        clientUpdates['id'] = userId; // Set id PK
-        try {
-          final upsertResult = await clientSpb
-              .from('client')
-              .upsert(clientUpdates, onConflict: 'id'); // Upsert on id conflict
-          final count = upsertResult?.count ??
-              0; // Safe access: null-safe avec fallback 0
-          print('Client upserted: $count rows');
-          clientSuccess =
-              count > 0 || true; // Success même si 0 (pas de changement)
-        } catch (e) {
-          print('Client upsert failed: $e');
-          clientSuccess = false;
-        }
-      }
-
-      print(
-          'Overall update success: $clientSuccess for $userId (user: $userSuccess)');
-      return userSuccess && clientSuccess;
-    } catch (e) {
-      print("updateClient() failed: $e");
-      return false;
-    }
+    final response = await apiFetcher.post('/update-client', body: body, file: photo);
+    return response.isSuccess && (response.data?['success'] ?? false);
+  } catch (e) {
+    print('updateClient() via API failed: $e');
+    return false;
   }
-
+}
   Future<String?> uploadPhoto(cross_file.XFile photo, String path) async {
     try {
       print('Uploading photo');

@@ -1,9 +1,9 @@
 import 'package:app_gest_lavage/presentation/pages/admin/admin_reservations_page.dart';
 import 'package:app_gest_lavage/presentation/pages/admin/dashboard_page.dart';
 import 'package:app_gest_lavage/presentation/pages/admin/manage_users_page.dart';
-import 'package:app_gest_lavage/presentation/pages/admin/settings_page.dart';
-import 'package:app_gest_lavage/presentation/providers/auth_controller.dart';
 import 'package:flutter/material.dart';
+
+import '../../../core/utils/app_colors.dart';
 
 class AdminHomePage extends StatefulWidget {
   const AdminHomePage({super.key});
@@ -15,51 +15,55 @@ class AdminHomePage extends StatefulWidget {
 class _AdminHomePageState extends State<AdminHomePage> {
   int _selectedIndex = 0;
 
-  final List<Widget> _pages = [
+  final List<Widget> _pages = const [
     DashboardPage(),
     ManageUsersPage(),
-    // SettingsPage(),
-    AdminReservationsPage()
+    AdminReservationsPage(),
   ];
-
-  final List<BottomNavigationBarItem> _items = const [
-    BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Dashboard'),
-    BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Utilisateurs'),
-    // BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Paramètres'),
-    BottomNavigationBarItem(
-        icon: Icon(Icons.calendar_today), label: 'reservations'),
-  ];
-
-  void _logout(BuildContext context) async {
-    await AuthController().service.signOut();
-    Navigator.pushReplacementNamed(context, '/login');
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Espace Admin"),
-        actions: [
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              if (value == 'logout') _logout(context);
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'logout',
-                child: Text('Déconnexion'),
-              ),
-            ],
-            icon: const Icon(Icons.account_circle),
-          )
-        ],
-      ),
+      backgroundColor: AppColors.background,
+      // ❌ Plus d'AppBar globale : chaque page gère son propre WashOpsHeader
+      // ✅ La déconnexion est gérée par défaut via l'avatar du WashOpsHeader
       body: _pages[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        items: _items,
-        onTap: (index) => setState(() => _selectedIndex = index),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, -5),
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _selectedIndex,
+          selectedItemColor: AppColors.primary,
+          unselectedItemColor: Colors.grey[600],
+          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
+          type: BottomNavigationBarType.fixed,
+          elevation: 0,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.dashboard_outlined),
+              activeIcon: Icon(Icons.dashboard),
+              label: 'Dashboard',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.people_outline),
+              activeIcon: Icon(Icons.people),
+              label: 'Utilisateurs',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.calendar_today_outlined),
+              activeIcon: Icon(Icons.calendar_today),
+              label: 'Réservations',
+            ),
+          ],
+          onTap: (index) => setState(() => _selectedIndex = index),
+        ),
       ),
     );
   }

@@ -1,9 +1,10 @@
-// Updated edit_client_page.dart
 import 'package:app_gest_lavage/data/models/auth_model.dart';
 import 'package:app_gest_lavage/presentation/providers/auth_controller.dart';
 import 'package:app_gest_lavage/presentation/providers/update_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+import '../../../core/widgets/washops_header.dart';
 
 class EditClientPage extends StatefulWidget {
   final Client client;
@@ -21,39 +22,45 @@ class _EditClientPageState extends State<EditClientPage> {
   @override
   void initState() {
     super.initState();
-    print('Client data in EditClientPage: ${widget.client.toMap()}'); // Debug log
     _status = widget.client.status != null
         ? Status.fromString(widget.client.status!)
         : Status.active;
-    // Initialize the controller with client data
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final controller = Provider.of<ClientUpdateController>(context, listen: false);
-      controller.initSpecificClient(widget.client);
+      Provider.of<ClientUpdateController>(context, listen: false)
+          .initSpecificClient(widget.client);
     });
   }
 
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
-    final controller = Provider.of<ClientUpdateController>(context, listen: false);
+    final controller =
+        Provider.of<ClientUpdateController>(context, listen: false);
     try {
       final success = await controller.save(context, widget.client.id, _status);
       if (success && mounted) {
         Navigator.pop(context, true);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Client modifié avec succès')),
+          const SnackBar(
+            content: Text('Client modifié avec succès'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else if (mounted && controller.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(controller.error!),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: $e')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Erreur: $e')));
       }
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -70,196 +77,340 @@ class _EditClientPageState extends State<EditClientPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Modifier le Client'),
-        backgroundColor: Colors.teal,
-        elevation: 0,
-        centerTitle: true,
-      ),
-      body: controller.loading
-          ? const Center(child: CircularProgressIndicator(color: Colors.teal))
-          : controller.error != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.error_outline,
-                          size: 50, color: Colors.red),
-                      const SizedBox(height: 16),
-                      Text(
-                        controller.error!,
-                        style: const TextStyle(fontSize: 16, color: Colors.red),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () => controller.error = null, // Clear error
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.teal,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: const Text('Réessayer'),
-                      ),
-                    ],
+      backgroundColor: WashTheme.background,
+      body: SafeArea(
+        // child: Column(
+        //   children: [
+        //     const WashOpsHeader(),
+        //     Expanded(
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.all(20),
+            children: [
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.arrow_back, color: WashTheme.navy),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
                   ),
-                )
-              : SafeArea(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Card(
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Form(
-                          key: _formKey,
-                          child: Consumer<ClientUpdateController>(
-                            builder: (context, updateController, child) {
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Modifier le Client',
-                                    style: TextStyle(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.teal,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  if (widget.client.photo != null &&
-                                      widget.client.photo!.isNotEmpty)
-                                    CircleAvatar(
-                                      radius: 30,
-                                      backgroundImage:
-                                          NetworkImage(widget.client.photo!),
-                                    ),
-                                  const SizedBox(height: 8),
-                                  ElevatedButton.icon(
-                                    onPressed: () => updateController.pickPhoto(context),
-                                    icon: const Icon(Icons.photo_camera, color: Colors.white),
-                                    label: const Text('Changer la photo'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.teal,
-                                      foregroundColor: Colors.white,
-                                    ),
-                                  ),
-                                  if (updateController.photo != null) ...[
-                                    const SizedBox(height: 8),
-                                    Text('Photo sélectionnée: ${updateController.photo!.name}'),
-                                  ],
-                                  const SizedBox(height: 16),
-                                  TextFormField(
-                                    controller: updateController.nameController,
-                                    decoration: InputDecoration(
-                                      labelText: 'Nom',
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      prefixIcon: const Icon(Icons.person,
-                                          color: Colors.teal),
-                                    ),
-                                    validator: (value) =>
-                                        value == null || value.trim().isEmpty
-                                            ? 'Le nom est requis'
-                                            : null,
-                                  ),
-                                  const SizedBox(height: 16),
-                                  TextFormField(
-                                    controller: updateController.contactController,
-                                    decoration: InputDecoration(
-                                      labelText: 'Contact',
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      prefixIcon: const Icon(Icons.phone,
-                                          color: Colors.teal),
-                                    ),
-                                    validator: (value) {
-                                      if (value != null && value.trim().isEmpty)
-                                        return null;
-                                      const phoneRegExp = r'^\+?[1-9]\d{1,14}$';
-                                      const emailRegExp =
-                                          r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$';
-                                      if (value != null &&
-                                          !RegExp(phoneRegExp).hasMatch(value) &&
-                                          !RegExp(emailRegExp).hasMatch(value)) {
-                                        return 'Contact invalide (doit être un numéro de téléphone ou email)';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                  const SizedBox(height: 16),
-                                  TextFormField(
-                                    controller: updateController.detailsController,
-                                    decoration: InputDecoration(
-                                      labelText: 'Détails',
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      prefixIcon: const Icon(Icons.info,
-                                          color: Colors.teal),
-                                    ),
-                                    maxLines: 3,
-                                  ),
-                                  const SizedBox(height: 16),
-                                  DropdownButtonFormField<Status>(
-                                    value: _status,
-                                    decoration: InputDecoration(
-                                      labelText: 'Statut',
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      prefixIcon: const Icon(Icons.toggle_on,
-                                          color: Colors.teal),
-                                    ),
-                                    items: Status.values
-                                        .map((status) => DropdownMenuItem(
-                                              value: status,
-                                              child: Text(status.name),
-                                            ))
-                                        .toList(),
-                                    onChanged: (value) =>
-                                        setState(() => _status = value),
-                                    validator: (value) => value == null
-                                        ? 'Le statut est requis'
-                                        : null,
-                                  ),
-                                  const SizedBox(height: 24),
-                                  Center(
-                                    child: _isLoading
-                                        ? const CircularProgressIndicator()
-                                        : ElevatedButton(
-                                            onPressed: _submitForm,
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.teal,
-                                              foregroundColor: Colors.white,
-                                              padding: const EdgeInsets.symmetric(
-                                                  horizontal: 32, vertical: 16),
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(8),
-                                              ),
-                                              textStyle:
-                                                  const TextStyle(fontSize: 16),
-                                            ),
-                                            child: const Text('Modifier le Client'),
-                                          ),
-                                  ),
-                                ],
-                              );
-                            },
-                          ),
-                        ),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'Modifier le Profil Client',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: WashTheme.navy,
                       ),
                     ),
                   ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Padding(
+                padding: const EdgeInsets.only(left: 40),
+                child: Text(
+                  'ID client : #${widget.client.id.substring(0, 8).toUpperCase()}',
+                  style: const TextStyle(
+                      fontSize: 12, color: WashTheme.textSecondary),
                 ),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        side: const BorderSide(color: WashTheme.border),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('Annuler',
+                          style: TextStyle(color: WashTheme.textSecondary)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _submitForm,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: WashTheme.navy,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: Colors.white),
+                            )
+                          : const Text('Enregistrer'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 22),
+
+              // Carte photo + statut
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: WashTheme.cardBackground,
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Center(
+                      child: Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 46,
+                            backgroundColor: WashTheme.chipGrayBg,
+                            backgroundImage: controller.photoBytes != null
+                                ? MemoryImage(controller.photoBytes!)
+                                : (widget.client.photo != null &&
+                                        widget.client.photo!.isNotEmpty)
+                                    ? NetworkImage(widget.client.photo!)
+                                        as ImageProvider
+                                    : null,
+                            child: controller.photoBytes == null &&
+                                    (widget.client.photo == null ||
+                                        widget.client.photo!.isEmpty)
+                                ? const Icon(Icons.person,
+                                    size: 40, color: WashTheme.navy)
+                                : null,
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: GestureDetector(
+                              onTap: () => controller.pickPhoto(context),
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: const BoxDecoration(
+                                  color: WashTheme.navy,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.edit,
+                                    size: 13, color: Colors.white),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      widget.client.name ?? 'Sans nom',
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                        color: WashTheme.navy,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: WashTheme.chipGrayBg,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Statut du compte',
+                              style: TextStyle(
+                                  fontSize: 13,
+                                  color: WashTheme.textSecondary)),
+                          WashStatusChip(
+                            label: _status?.value ?? 'Active',
+                            background: _status == Status.active
+                                ? WashTheme.chipGreenBg
+                                : WashTheme.chipGrayBg,
+                            textColor: _status == Status.active
+                                ? WashTheme.chipGreenText
+                                : WashTheme.chipGrayText,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Carte infos client
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: WashTheme.cardBackground,
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Informations Client',
+                        style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: WashTheme.navy)),
+                    const SizedBox(height: 14),
+                    _buildFieldLabel('Nom complet'),
+                    const SizedBox(height: 6),
+                    _buildField(
+                      controller: controller.nameController,
+                      validator: (v) => v == null || v.trim().isEmpty
+                          ? 'Le nom est requis'
+                          : null,
+                    ),
+                    const SizedBox(height: 14),
+                    _buildFieldLabel('Statut du compte'),
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      decoration: BoxDecoration(
+                        color: WashTheme.chipGrayBg,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<Status>(
+                          value: _status,
+                          isExpanded: true,
+                          items: Status.values
+                              .map((s) => DropdownMenuItem(
+                                  value: s, child: Text(s.value)))
+                              .toList(),
+                          onChanged: (v) => setState(() => _status = v),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    _buildFieldLabel('Numéro de téléphone'),
+                    const SizedBox(height: 6),
+                    _buildField(
+                      controller: controller.contactController,
+                      keyboardType: TextInputType.phone,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) return null;
+                        const phoneRegExp = r'^\+?[1-9]\d{1,14}$';
+                        const emailRegExp = r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$';
+                        if (!RegExp(phoneRegExp).hasMatch(value) &&
+                            !RegExp(emailRegExp).hasMatch(value)) {
+                          return 'Contact invalide';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Carte notes internes
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: WashTheme.cardBackground,
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Notes Internes',
+                        style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: WashTheme.navy)),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Visibles uniquement par le personnel.',
+                      style: TextStyle(
+                          fontSize: 12, color: WashTheme.textSecondary),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: controller.detailsController,
+                      maxLines: 4,
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: WashTheme.chipGrayBg,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.all(14),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        //     ),
+        //   ],
+        // ),
+      ),
+    );
+  }
+
+  Widget _buildFieldLabel(String text) => Text(
+        text,
+        style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: WashTheme.textSecondary),
+      );
+
+  Widget _buildField({
+    required TextEditingController controller,
+    String? Function(String?)? validator,
+    TextInputType? keyboardType,
+  }) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      validator: validator,
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: WashTheme.chipGrayBg,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      ),
     );
   }
 }

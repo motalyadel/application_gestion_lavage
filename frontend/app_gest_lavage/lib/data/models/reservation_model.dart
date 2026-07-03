@@ -9,10 +9,10 @@ class Reservation extends Equatable {
   final String carId;
   final int? position;
   final DateTime? expectedTime;
-  // final DateTime dateTime;
   final String status;
   final DateTime createdAt;
-  final Service? service; // Optional service details if fetched
+  final DateTime? startedAt; // ✅ AJOUT : heure de début réelle du lavage
+  final Service? service;
   final Car? car;
 
   const Reservation({
@@ -22,9 +22,9 @@ class Reservation extends Equatable {
     required this.carId,
     this.position,
     this.expectedTime,
-    // required this.dateTime,
     required this.status,
     required this.createdAt,
+    this.startedAt, // ✅ AJOUT
     this.service,
     this.car,
   });
@@ -39,9 +39,12 @@ class Reservation extends Equatable {
       expectedTime: map['expected_time'] != null
           ? DateTime.parse(map['expected_time'])
           : null,
-      // dateTime: DateTime.parse(map['date_time'] as String),
       status: map['status'] as String,
       createdAt: DateTime.parse(map['created_at'] as String),
+      // ✅ AJOUT : parsing de started_at (null si le lavage n'a pas démarré)
+      startedAt: map['started_at'] != null
+          ? DateTime.parse(map['started_at'])
+          : null,
       service: map['service'] != null ? Service.fromMap(map['service']) : null,
       car: map['car'] != null ? Car.fromMap(map['car']) : null,
     );
@@ -55,13 +58,13 @@ class Reservation extends Equatable {
       'car_id': carId,
       'position': position,
       'expected_time': expectedTime,
-      // 'date_time': dateTime.toIso8601String(),
       'status': status,
       'created_at': createdAt.toIso8601String(),
+      'started_at': startedAt?.toIso8601String(), // ✅ AJOUT
     };
   }
 
   @override
   List<Object?> get props =>
-      [id, clientId, serviceId, carId, status, createdAt, service];
+      [id, clientId, serviceId, carId, status, createdAt, startedAt, service];
 }

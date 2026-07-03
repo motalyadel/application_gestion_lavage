@@ -1,9 +1,9 @@
 import 'package:app_gest_lavage/presentation/pages/client/accueil_page.dart';
 import 'package:app_gest_lavage/presentation/pages/client/client_reservations_page.dart';
 import 'package:app_gest_lavage/presentation/pages/client/profile_page.dart';
-import 'package:app_gest_lavage/presentation/pages/client/reservations_page.dart';
-import 'package:app_gest_lavage/presentation/providers/auth_controller.dart';
 import 'package:flutter/material.dart';
+
+import '../../../core/utils/app_colors.dart';
 
 class ClientHomePage extends StatefulWidget {
   const ClientHomePage({super.key});
@@ -16,49 +16,42 @@ class _ClientHomePageState extends State<ClientHomePage> {
   int _selectedIndex = 0;
 
   final List<Widget> _pages = [
-    AccueilPage(),
-    // ReservationsPage(),
+    const AccueilPage(),
     const ClientReservationsPage(),
-    ProfilePage(),
+    const ProfilePage(),
   ];
-
-  final List<BottomNavigationBarItem> _items = const [
-    BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Accueil'),
-    BottomNavigationBarItem(
-        icon: Icon(Icons.calendar_today), label: 'Réservations'),
-    BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
-  ];
-
-  void _logout(BuildContext context) async {
-    await AuthController().service.signOut();
-    Navigator.pushReplacementNamed(context, '/login');
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Espace Client"),
-        actions: [
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              if (value == 'logout') _logout(context);
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'logout',
-                child: Text('Déconnexion'),
-              ),
-            ],
-            icon: const Icon(Icons.account_circle),
-          )
-        ],
-      ),
+      // ❌ Plus d'AppBar globale : chaque page gère son propre WashOpsHeader
+      // ✅ La déconnexion sera gérée dans ProfilePage (bouton Logout, cf. design Stitch)
       body: _pages[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        items: _items,
-        onTap: (index) => setState(() => _selectedIndex = index),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, -5),
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _selectedIndex,
+          selectedItemColor: AppColors.primary,
+          unselectedItemColor: Colors.grey[600],
+          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
+          type: BottomNavigationBarType.fixed,
+          elevation: 0,
+          items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Accueil'),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.calendar_today), label: 'Réservations'),
+            BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
+          ],
+          onTap: (index) => setState(() => _selectedIndex = index),
+        ),
       ),
     );
   }

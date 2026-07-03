@@ -1,15 +1,10 @@
-// import 'package:app_gest_lavage/data/models/reservation_model.dart';
-// import 'package:app_gest_lavage/data/models/service_model.dart';
 import 'package:app_gest_lavage/core/utils/app_massenger.dart';
 import 'package:app_gest_lavage/presentation/providers/auth_controller.dart';
-// import 'package:app_gest_lavage/presentation/providers/car_management_controller.dart';
 import 'package:app_gest_lavage/presentation/providers/reservation_management_controller.dart';
-// import 'package:app_gest_lavage/presentation/providers/service_management_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/utils/app_colors.dart';
-// import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/widgets/washops_header.dart';
 
 class AdminReservationsPage extends StatefulWidget {
   const AdminReservationsPage({super.key});
@@ -19,7 +14,6 @@ class AdminReservationsPage extends StatefulWidget {
 }
 
 class _AdminReservationsPageState extends State<AdminReservationsPage> {
-  // String? _selectedClientId;
   bool _isLoadingInitialized = false;
 
   @override
@@ -45,167 +39,10 @@ class _AdminReservationsPageState extends State<AdminReservationsPage> {
     }
   }
 
-  // Future<void> _showAddReservationDialog(BuildContext context) async {
-  //   final reservationController =
-  //       Provider.of<ReservationManagementController>(context, listen: false);
-  //   final serviceController =
-  //       Provider.of<ServiceManagementController>(context, listen: false);
-
-  //   String? selectedClientId;
-  //   String? selectedServiceId;
-  //   String? selectedCarId;
-  //   DateTime selectedDateTime = DateTime.now();
-  //   List<dynamic> cars = [];
-
-  //   // Charger les clients et services une seule fois
-  //   final clients = await Supabase.instance.client
-  //       .from('auth.users')
-  //       .select('id, email')
-  //       .eq('role', 'client');
-
-  //   final services = serviceController.services;
-
-  //   final result = await showDialog<bool>(
-  //     context: context,
-  //     builder: (context) => StatefulBuilder(
-  //       builder: (context, setStateDialog) => AlertDialog(
-  //         title: const Text('Ajouter une Réservation'),
-  //         content: SingleChildScrollView(
-  //           child: Column(
-  //             mainAxisSize: MainAxisSize.min,
-  //             children: [
-  //               // CLIENT
-  //               DropdownButtonFormField<String>(
-  //                 hint: const Text('Client'),
-  //                 value: selectedClientId,
-  //                 items: clients.map<DropdownMenuItem<String>>((c) {
-  //                   return DropdownMenuItem(
-  //                     value: c['id'],
-  //                     child: Text(c['email']),
-  //                   );
-  //                 }).toList(),
-  //                 onChanged: (value) async {
-  //                   setStateDialog(() {
-  //                     selectedClientId = value;
-  //                     selectedCarId = null;
-  //                     cars = [];
-  //                   });
-
-  //                   if (value != null) {
-  //                     final data = await Supabase.instance.client
-  //                         .from('cars')
-  //                         .select('id, immatriculation')
-  //                         .eq('user_id', value);
-
-  //                     setStateDialog(() {
-  //                       cars = data;
-  //                     });
-  //                   }
-  //                 },
-  //               ),
-  //               const SizedBox(height: 12),
-
-  //               // SERVICE
-  //               DropdownButtonFormField<String>(
-  //                 hint: const Text('Service'),
-  //                 value: selectedServiceId,
-  //                 items: services.map<DropdownMenuItem<String>>((s) {
-  //                   return DropdownMenuItem(
-  //                     value: s.id,
-  //                     child: Text(s.name),
-  //                   );
-  //                 }).toList(),
-  //                 onChanged: (value) =>
-  //                     setStateDialog(() => selectedServiceId = value),
-  //               ),
-  //               const SizedBox(height: 12),
-
-  //               // VOITURE
-  //               DropdownButtonFormField<String>(
-  //                 hint: const Text('Voiture'),
-  //                 value: selectedCarId,
-  //                 items: cars.map<DropdownMenuItem<String>>((c) {
-  //                   return DropdownMenuItem(
-  //                     value: c['id'],
-  //                     child: Text(c['immatriculation']),
-  //                   );
-  //                 }).toList(),
-  //                 onChanged: selectedClientId != null
-  //                     ? (value) => setStateDialog(() => selectedCarId = value)
-  //                     : null,
-  //               ),
-  //               const SizedBox(height: 12),
-
-  //               // DATE
-  //               InkWell(
-  //                 onTap: () async {
-  //                   final picked = await showDatePicker(
-  //                     context: context,
-  //                     initialDate: selectedDateTime,
-  //                     firstDate: DateTime.now(),
-  //                     lastDate: DateTime(2026),
-  //                   );
-  //                   if (picked != null) {
-  //                     setStateDialog(() => selectedDateTime = picked);
-  //                   }
-  //                 },
-  //                 child: InputDecorator(
-  //                   decoration: const InputDecoration(
-  //                     labelText: 'Date',
-  //                     border: OutlineInputBorder(),
-  //                   ),
-  //                   child: Text(
-  //                     selectedDateTime.toLocal().toString().split(' ')[0],
-  //                   ),
-  //                 ),
-  //               ),
-  //             ],
-  //           ),
-  //         ),
-  //         actions: [
-  //           TextButton(
-  //             onPressed: () => Navigator.pop(context, false),
-  //             child: const Text('Annuler'),
-  //           ),
-  //           TextButton(
-  //             onPressed: selectedClientId != null &&
-  //                     selectedServiceId != null &&
-  //                     selectedCarId != null
-  //                 ? () => Navigator.pop(context, true)
-  //                 : null,
-  //             child: const Text('Ajouter'),
-  //           ),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-
-  //   if (result == true) {
-  //     final success = await reservationController.addReservation(
-  //       context: context,
-  //       clientId: selectedClientId!,
-  //       serviceId: selectedServiceId!,
-  //       carId: selectedCarId!,
-  //       dateTime: selectedDateTime,
-  //     );
-
-  //     if (mounted) {
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         SnackBar(
-  //           content: Text(success
-  //               ? 'Réservation ajoutée'
-  //               : reservationController.error ?? 'Échec'),
-  //         ),
-  //       );
-  //     }
-  //   }
-  // }
-
   @override
   Widget build(BuildContext context) {
     final authController = Provider.of<AuthController>(context);
     final isAdmin = authController.currentRole == 'admin';
-    // final car = Provider.of<CarManagementController>(context);
     final reservationController =
         Provider.of<ReservationManagementController>(context);
 
@@ -217,197 +54,34 @@ class _AdminReservationsPageState extends State<AdminReservationsPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Calendrier des Réservations'),
-        backgroundColor: AppColors.primary,
-        elevation: 0,
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: () {
-              _isLoadingInitialized = false;
-              reservationController.loadReservationsJr(isAdmin: true);
-            },
-            tooltip: 'Rafraîchir',
-          ),
-        ],
+      backgroundColor: WashTheme.background,
+      body: SafeArea(
+        child: Column(
+          children: [
+            const WashOpsHeader(),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 20, 20, 12),
+              child: WashSectionTitle(
+                title: "Today's Queue",
+                subtitle: 'Manage incoming and active wash sessions.',
+              ),
+            ),
+            Expanded(
+              child: reservationController.loading
+                  ? const Center(
+                      child: CircularProgressIndicator(color: WashTheme.navy),
+                    )
+                  : reservationController.error != null &&
+                          reservationController.reservations.isEmpty
+                      ? _buildErrorState(reservationController.error!)
+                      : reservationController.reservations.isEmpty
+                          ? _buildEmptyState()
+                          : _buildReservationsList(
+                              reservationController, isAdmin),
+            ),
+          ],
+        ),
       ),
-      body: reservationController.loading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppColors.primary))
-          : reservationController.error != null &&
-                  reservationController.reservations.isEmpty
-              ? Center(child: Text(reservationController.error!))
-              : reservationController.reservations.isEmpty
-                  ? const Center(child: Text('Aucune réservation trouvée'))
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(16.0),
-                      itemCount: reservationController.reservations.length,
-                      itemBuilder: (context, index) {
-                        final reservation =
-                            reservationController.reservations[index];
-                        print("reservation cars ${reservation.car}");
-                        print(reservation.car?.immatriculation);
-
-                        return Card(
-                          elevation: 4,
-                          margin: const EdgeInsets.symmetric(vertical: 8),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                          child: ListTile(
-                            leading: const Icon(Icons.calendar_today,
-                                color: AppColors.primary),
-                            title: Text(
-                              reservation.service?.name ?? 'Service inconnu',
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            trailing: reservation.status == 'waiting'
-                                ? ElevatedButton.icon(
-                                    icon: const Icon(Icons.play_arrow),
-                                    label: const Text('Début Lavage'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.secondary,
-                                      foregroundColor: Colors.white,
-                                    ),
-                                    onPressed: () async {
-                                      final success =
-                                          await reservationController
-                                              .startLavage(
-                                        reservationId: reservation.id,
-                                        isAdmin: isAdmin,
-                                      );
-
-                                      if (success) {
-                                        AppMessenger.showSuccess(
-                                            '🚿 Lavage démarré');
-                                        reservationController.loadReservationsJr(
-                                            isAdmin: true);
-                                      } else {
-                                        AppMessenger.showError(
-                                          reservationController.error ??
-                                              'Erreur',
-                                        );
-                                      }
-                                    },
-                                  )
-                                : reservation.status == 'in_progress'
-                                    ? ElevatedButton.icon(
-                                        icon: const Icon(Icons.check),
-                                        label: const Text('Terminer Lavage'),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.red,
-                                          foregroundColor: Colors.white,
-                                        ),
-                                        onPressed: () async {
-                                          final success =
-                                              await reservationController
-                                                  .finishLavage(
-                                            reservationId: reservation.id,
-                                            isAdmin: isAdmin,
-                                          );
-
-                                          // if (!context.mounted) return;
-
-                                          // ScaffoldMessenger.of(context)
-                                          //     .showSnackBar(
-                                          //   SnackBar(
-                                          //     content: Text(message ?? ''),
-                                          //     backgroundColor: success
-                                          //         ? Colors.green
-                                          //         : Colors.redAccent,
-                                          //     behavior:
-                                          //         SnackBarBehavior.floating,
-                                          //   ),
-                                          // );
-
-                                          if (success) {
-                                            AppMessenger.showSuccess(
-                                                '✅ Lavage terminé');
-                                            reservationController
-                                                .loadReservationsJr(
-                                                    isAdmin: true);
-                                          } else {
-                                            AppMessenger.showError(
-                                              reservationController.error ??
-                                                  'Erreur',
-                                            );
-                                          }
-                                        },
-                                      )
-                                    : null,
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const SizedBox(height: 4),
-
-                                // 🚗 Immatriculation
-                                Text(
-                                  reservation.car?.immatriculation != null
-                                      ? 'Véhicule : ${reservation.car!.immatriculation}'
-                                      : 'Véhicule : inconnu',
-                                  style: const TextStyle(
-                                    color: AppColors.textSecondary,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-
-                                const SizedBox(height: 4),
-
-                                // Position
-                                Text(
-                                  reservation.position != null
-                                      ? 'Position  : ${reservation.position}'
-                                      : 'Position non définie',
-                                  style: const TextStyle(
-                                      color: AppColors.textSecondary),
-                                ),
-
-                                const SizedBox(height: 4),
-
-                                // Expected time
-                                Text(
-                                  reservation.expectedTime != null
-                                      ? 'Heure estimée : '
-                                          '${reservation.expectedTime!.hour.toString().padLeft(2, '0')}:'
-                                          '${reservation.expectedTime!.minute.toString().padLeft(2, '0')}'
-                                      : 'Heure estimée : en attente',
-                                  style: const TextStyle(
-                                      color: AppColors.textSecondary),
-                                ),
-
-                                const SizedBox(height: 4),
-
-                                // Status
-                                Text(
-                                  'Statut : ${reservation.status}',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    color: reservation.status == 'waiting'
-                                        ? Colors.orange
-                                        : reservation.status == 'in_progress'
-                                            ? Colors.blue
-                                            : Colors.green,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-      // floatingActionButton: FloatingActionButton(
-      //   onPressed: () {
-      //     print('Bouton + cliqué !');
-      //     // Ajouter un délai pour éviter le build en cours
-      //     WidgetsBinding.instance.addPostFrameCallback((_) {
-      //       _showAddReservationDialog(context);
-      //     });
-      //   },
-      //   backgroundColor: AppColors.primary,
-      //   child: const Icon(Icons.add),
-      // ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           final result =
@@ -416,8 +90,229 @@ class _AdminReservationsPageState extends State<AdminReservationsPage> {
             reservationController.loadReservationsJr(isAdmin: true);
           }
         },
-        child: const Icon(Icons.add),
+        backgroundColor: WashTheme.navy,
+        elevation: 2,
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
+  }
+
+  Widget _buildErrorState(String error) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+          const SizedBox(height: 16),
+          Text(
+            error,
+            style:
+                const TextStyle(fontSize: 16, color: WashTheme.textSecondary),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: () {
+              final reservationController =
+                  Provider.of<ReservationManagementController>(context,
+                      listen: false);
+              reservationController.loadReservationsJr(isAdmin: true);
+            },
+            icon: const Icon(Icons.refresh),
+            label: const Text('Réessayer'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: WashTheme.navy,
+              foregroundColor: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.calendar_today, size: 64, color: Colors.grey[400]),
+          const SizedBox(height: 16),
+          const Text(
+            'Aucune réservation trouvée',
+            style: TextStyle(fontSize: 18, color: WashTheme.textSecondary),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Appuyez sur le bouton + pour en créer une',
+            style: TextStyle(fontSize: 14, color: WashTheme.textSecondary),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReservationsList(
+      ReservationManagementController controller, bool isAdmin) {
+    return RefreshIndicator(
+      color: WashTheme.navy,
+      onRefresh: () => controller.loadReservationsJr(isAdmin: true),
+      child: ListView.builder(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        itemCount: controller.reservations.length,
+        itemBuilder: (context, index) {
+          final reservation = controller.reservations[index];
+          return _buildReservationCard(reservation, controller, isAdmin);
+        },
+      ),
+    );
+  }
+
+  Widget _buildReservationCard(
+    reservation,
+    ReservationManagementController controller,
+    bool isAdmin,
+  ) {
+    final isWaiting = reservation.status == 'waiting';
+    final isInProgress = reservation.status == 'in_progress';
+
+    final statusChip = isWaiting
+        ? const WashStatusChip(
+            label: 'Pending',
+            background: WashTheme.chipGrayBg,
+            textColor: WashTheme.chipGrayText,
+            icon: Icons.access_time,
+          )
+        : isInProgress
+            ? const WashStatusChip(
+                label: 'In Progress',
+                background: WashTheme.chipGreenBg,
+                textColor: WashTheme.chipGreenText,
+                icon: Icons.directions_car,
+              )
+            : const WashStatusChip(
+                label: 'Terminé',
+                background: WashTheme.chipBlueBg,
+                textColor: WashTheme.chipBlueText,
+                icon: Icons.check,
+              );
+
+    final timeLabel = reservation.expectedTime != null
+        ? '${reservation.expectedTime!.hour.toString().padLeft(2, '0')}:'
+            '${reservation.expectedTime!.minute.toString().padLeft(2, '0')}'
+        : 'En attente';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: WashTheme.cardBackground,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  reservation.service?.name ?? 'Service inconnu',
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    color: WashTheme.navy,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
+              statusChip,
+            ],
+          ),
+          const SizedBox(height: 10),
+          WashDetailRow(
+            icon: Icons.location_on_outlined,
+            value: reservation.position != null
+                ? 'position ${reservation.position}'
+                : 'Position non définie',
+          ),
+          const SizedBox(height: 6),
+          WashDetailRow(
+            icon: Icons.timer_outlined,
+            value: timeLabel,
+          ),
+          const SizedBox(height: 6),
+          WashDetailRow(
+            icon: Icons.person_outline,
+            value: reservation.car?.immatriculation ?? 'Client',
+          ),
+          if (isWaiting || isInProgress) ...[
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              child: isWaiting
+                  ? ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: WashTheme.navy,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: () => _handleAction(
+                          reservation, controller, isAdmin, isWaiting),
+                      child: const Text('Démarrer',
+                          style: TextStyle(fontWeight: FontWeight.w600)),
+                    )
+                  : OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: WashTheme.navy,
+                        side: const BorderSide(color: WashTheme.navy),
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: () => _handleAction(
+                          reservation, controller, isAdmin, isWaiting),
+                      child: const Text('Terminé',
+                          style: TextStyle(fontWeight: FontWeight.w600)),
+                    ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleAction(
+    reservation,
+    ReservationManagementController controller,
+    bool isAdmin,
+    bool isWaiting,
+  ) async {
+    final success = isWaiting
+        ? await controller.startLavage(
+            reservationId: reservation.id, isAdmin: isAdmin)
+        : await controller.finishLavage(
+            reservationId: reservation.id, isAdmin: isAdmin);
+
+    if (success) {
+      AppMessenger.showSuccess(
+        isWaiting ? '🚿 Lavage démarré' : '✅ Lavage terminé',
+      );
+      controller.loadReservationsJr(isAdmin: true);
+    } else {
+      AppMessenger.showError(controller.error ?? 'Erreur');
+    }
   }
 }

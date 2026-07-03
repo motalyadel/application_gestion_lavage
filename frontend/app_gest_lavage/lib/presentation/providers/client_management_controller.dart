@@ -36,6 +36,7 @@ class ClientManagementController extends ChangeNotifier {
     String? details,
     DateTime? startDate,
     String? status,
+    XFile? photo,
   }) async {
     loading = true;
     error = null;
@@ -51,6 +52,7 @@ class ClientManagementController extends ChangeNotifier {
         startDate: startDate,
         status: status,
         roles: ['client'],
+        photo: photo,
       );
       if (success) {
         await loadClients();
@@ -81,7 +83,8 @@ class ClientManagementController extends ChangeNotifier {
         email: email,
         password: password,
         contact: contact,
-        start_date: startDate?.toIso8601String() ?? DateTime.now().toIso8601String(),
+        start_date:
+            startDate?.toIso8601String() ?? DateTime.now().toIso8601String(),
       );
       if (success) {
         await loadClients();
@@ -96,38 +99,42 @@ class ClientManagementController extends ChangeNotifier {
   }
 
   Future<void> updateClient({
-  required String id,
-  String? name,
-  String? contact,
-  String? details,
-  Status? status,
-}) async {
-  loading = true;
-  error = null;
-  notifyListeners();
-
-  try {
-    final success = await _service.updateClient(
-      userId: id,
-      role: 'client',
-      name: name,
-      contact: contact,
-      details: details,
-      status: status,
-      email: null,
-    );
-    if (success) {
-      await loadClients();
-    } else {
-      throw Exception('Échec de la mise à jour');
-    }
-  } catch (e) {
-    error = 'Échec de la mise à jour du client : $e';
-  } finally {
-    loading = false;
+    required String id,
+    String? name,
+    String? contact,
+    String? details,
+    Status? status,
+    DateTime?
+        startDate, // ✅ AJOUT : pour rester cohérent avec _service.updateClient
+    XFile?
+        photo, // ✅ AJOUT : remplace l'ancien `email`/`role` qui n'existent plus
+  }) async {
+    loading = true;
+    error = null;
     notifyListeners();
+
+    try {
+      final success = await _service.updateClient(
+        userId: id,
+        name: name,
+        contact: contact,
+        details: details,
+        status: status,
+        startDate: startDate, // ✅ AJOUT
+        photo: photo, // ✅ MODIFIÉ : plus de `role` ni `email`
+      );
+      if (success) {
+        await loadClients();
+      } else {
+        throw Exception('Échec de la mise à jour');
+      }
+    } catch (e) {
+      error = 'Échec de la mise à jour du client : $e';
+    } finally {
+      loading = false;
+      notifyListeners();
+    }
   }
-}
 
   Future<void> deleteClient(String id) async {
     loading = true;

@@ -1,262 +1,233 @@
-import 'package:app_gest_lavage/data/models/auth_model.dart';
-import 'package:app_gest_lavage/data/services/client_service.dart';
 import 'package:app_gest_lavage/presentation/providers/auth_controller.dart';
-import 'package:app_gest_lavage/presentation/providers/update_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import 'package:cross_file/cross_file.dart' as cross_file;
 
-class ProfilePage extends StatefulWidget {
+import '../../../core/widgets/washops_header.dart';
+
+class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
-  @override
-  State<ProfilePage> createState() => _ProfilePageState();
-}
-
-class _ProfilePageState extends State<ProfilePage> {
-  final _formKey = GlobalKey<FormState>();
-  bool _isLoading = false;
-  Client? _client;
-  List<Map<String, dynamic>> _loginHistory = [];
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadClientData();
-    });
+  Future<void> _logout(BuildContext context) async {
+    await AuthController().service.signOut();
+    if (context.mounted) {
+      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+    }
   }
 
-  Future<void> _loadClientData() async {
-    setState(() => _isLoading = true);
-    final service = ClientService();
-    final client = await service.getCurrentClient();
-    if (client != null) {
-      print('Initializing ClientUpdateController with: $client');
-      Provider.of<ClientUpdateController>(context, listen: false)
-          .initSpecificClient(client);
-      setState(() => _client = client);
-    } else {
-      print('Failed to load client data');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Erreur de chargement du profil')),
-      );
-    }
-    setState(() => _isLoading = false);
-  }
-
-  Future<void> _submitForm() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() => _isLoading = true);
-    final controller =
-        Provider.of<ClientUpdateController>(context, listen: false);
-    try {
-      final photoUrl = controller.photo != null
-          ? await ClientService()
-              .uploadPhoto(controller.photo!, 'avatars/${_client!.id}')
-          : null;
-      final success = await ClientService().updateClientProfile(
-        userId: _client!.id,
-        name: controller.nameController.text,
-        contact: controller.contactController.text,
-        details: controller.detailsController.text,
-        photo: photoUrl,
-      );
-      if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profil mis à jour avec succès')),
-        );
-        await _loadClientData(); // Refresh data
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Échec de la mise à jour')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: $e')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
+  // ✅ AJOUT : stub visuel — pas d'écran réel derrière ces 3 liens pour l'instant
+  void _showComingSoon(BuildContext context, String feature) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('$feature : bientôt disponible')),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final authController = Provider.of<AuthController>(context);
-    if (authController.currentRole != 'client') {
+
+    if (authController.user == null || authController.currentRole != 'client') {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Navigator.pushReplacementNamed(context, '/login');
       });
       return const SizedBox.shrink();
     }
 
+    final user = authController.currentUser;
+    // ✅ AJOUT : cast dynamique pour récupérer `photo` sans connaître le type exact
+    // exposé par AuthController.currentUser (Client a ce champ, AuthModel pas forcément).
+    final String? photoUrl = (user as dynamic)?.photo;
+    final String name = user?.name ?? 'Client';
+    final String contact = (user as dynamic)?.contact ?? 'Non spécifié';
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mon Compte'),
-        backgroundColor: Colors.teal,
-        elevation: 0,
-        centerTitle: true,
-      ),
-      body: _isLoading || _client == null
-          ? const Center(child: CircularProgressIndicator(color: Colors.teal))
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: WashTheme.background,
+      body: SafeArea(
+        child: Column(
+          children: [
+            const WashOpsHeader(),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(20),
                 children: [
-                  Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Form(
-                        key: _formKey,
-                        child: Consumer<ClientUpdateController>(
-                          builder: (context, controller, child) {
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                TextFormField(
-                                  controller: controller.nameController,
-                                  decoration: InputDecoration(
-                                    labelText: 'Nom',
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    prefixIcon: const Icon(Icons.person,
-                                        color: Colors.teal),
-                                  ),
-                                  validator: (value) =>
-                                      value == null || value.trim().isEmpty
-                                          ? 'Le nom est requis'
-                                          : null,
-                                ),
-                                const SizedBox(height: 16),
-                                TextFormField(
-                                  controller: controller.contactController,
-                                  decoration: InputDecoration(
-                                    labelText: 'Contact (téléphone ou email)',
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    prefixIcon: const Icon(Icons.contact_phone,
-                                        color: Colors.teal),
-                                  ),
-                                  validator: (value) {
-                                    if (value != null && value.trim().isEmpty)
-                                      return null;
-                                    const phoneRegExp = r'^\+?[1-9]\d{1,14}$';
-                                    const emailRegExp =
-                                        r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$';
-                                    if (value != null &&
-                                        !RegExp(phoneRegExp).hasMatch(value) &&
-                                        !RegExp(emailRegExp).hasMatch(value)) {
-                                      return 'Contact invalide (doit être un numéro de téléphone ou email)';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                                const SizedBox(height: 16),
-                                TextFormField(
-                                  controller: controller.detailsController,
-                                  decoration: InputDecoration(
-                                    labelText: 'Détails',
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    prefixIcon: const Icon(Icons.info,
-                                        color: Colors.teal),
-                                  ),
-                                  maxLines: 3,
-                                ),
-                                const SizedBox(height: 16),
-                                ElevatedButton(
-                                  onPressed: () async {
-                                    final picker = ImagePicker();
-                                    final pickedFile = await picker.pickImage(
-                                        source: ImageSource.gallery);
-                                    if (pickedFile != null) {
-                                      controller.photo = pickedFile;
-                                      controller.notifyListeners();
-                                    }
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.teal,
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8)),
-                                  ),
-                                  child: const Text('Choisir une photo'),
-                                ),
-                                if (controller.photo != null)
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 8),
-                                    child: Text(
-                                        'Photo sélectionnée: ${controller.photo!.name}'),
-                                  ),
-                                const SizedBox(height: 24),
-                                Center(
-                                  child: ElevatedButton(
-                                    onPressed: _submitForm,
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.teal,
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 32, vertical: 16),
-                                      shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8)),
-                                      textStyle: const TextStyle(fontSize: 16),
-                                    ),
-                                    child:
-                                        const Text('Mettre à jour le profil'),
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
+                  const SizedBox(height: 8),
+
+                  // Avatar + pencil (visuel uniquement, pas d'action liée encore)
+                  Center(
+                    child: Stack(
+                      children: [
+                        CircleAvatar(
+                          radius: 48,
+                          backgroundColor: WashTheme.chipGrayBg,
+                          backgroundImage:
+                              (photoUrl != null && photoUrl.isNotEmpty)
+                                  ? NetworkImage(photoUrl)
+                                  : null,
+                          child: (photoUrl == null || photoUrl.isEmpty)
+                              ? const Icon(Icons.person,
+                                  size: 48, color: WashTheme.navy)
+                              : null,
                         ),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: GestureDetector(
+                            onTap: () =>
+                                _showComingSoon(context, 'Changer la photo'),
+                            child: Container(
+                              padding: const EdgeInsets.all(7),
+                              decoration: const BoxDecoration(
+                                color: WashTheme.navy,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.edit,
+                                  size: 14, color: Colors.white),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  Center(
+                    child: Text(
+                      name,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: WashTheme.navy,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Historique des connexions',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  const SizedBox(height: 4),
+                  Center(
+                    child: Text(
+                      contact,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: WashTheme.textSecondary,
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  _loginHistory.isEmpty
-                      ? const Center(
-                          child: Text('Aucun historique de connexion'))
-                      : ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _loginHistory.length,
-                          itemBuilder: (context, index) {
-                            final login = _loginHistory[index];
-                            return Card(
-                              margin: const EdgeInsets.symmetric(vertical: 4),
-                              child: ListTile(
-                                title: Text(
-                                  'Connexion: ${login['login_time'] ?? 'Inconnu'}',
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold),
-                                ),
-                                subtitle: Text(
-                                  'Device: ${login['device_info'] ?? 'Non spécifié'}\nIP: ${login['ip_address'] ?? 'Non spécifié'}',
-                                ),
-                              ),
-                            );
-                          },
-                        ),
+
+                  const SizedBox(height: 28),
+
+                  // Menu : visuel uniquement, pas de navigation réelle pour l'instant
+                  _buildMenuCard(
+                    children: [
+                      _buildMenuItem(
+                        icon: Icons.edit_outlined,
+                        label: 'Modifier le profil',
+                        onTap: () =>
+                            _showComingSoon(context, 'Modifier le profil'),
+                      ),
+                      const Divider(height: 1, color: WashTheme.border),
+                      _buildMenuItem(
+                        icon: Icons.settings_outlined,
+                        label: 'Paramètres du compte',
+                        onTap: () =>
+                            _showComingSoon(context, 'Paramètres du compte'),
+                      ),
+                      const Divider(height: 1, color: WashTheme.border),
+                      _buildMenuItem(
+                        icon: Icons.notifications_outlined,
+                        label: 'Notifications',
+                        onTap: () => _showComingSoon(context, 'Notifications'),
+                        showDot: true,
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Logout — fonctionnel
+                  _buildMenuCard(
+                    children: [
+                      _buildMenuItem(
+                        icon: Icons.logout,
+                        label: 'Déconnexion',
+                        iconColor: Colors.red,
+                        labelColor: Colors.red,
+                        onTap: () => _logout(context),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMenuCard({required List<Widget> children}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: WashTheme.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(children: children),
+    );
+  }
+
+  Widget _buildMenuItem({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    Color iconColor = WashTheme.navy,
+    Color labelColor = Colors.black87,
+    bool showDot = false,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: iconColor == Colors.red
+                    ? Colors.red.withOpacity(0.1)
+                    : WashTheme.chipBlueBg,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, size: 20, color: iconColor),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: labelColor,
+                ),
+              ),
+            ),
+            if (showDot)
+              Container(
+                width: 8,
+                height: 8,
+                margin: const EdgeInsets.only(right: 8),
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            const Icon(Icons.chevron_right,
+                size: 20, color: WashTheme.textSecondary),
+          ],
+        ),
+      ),
     );
   }
 }

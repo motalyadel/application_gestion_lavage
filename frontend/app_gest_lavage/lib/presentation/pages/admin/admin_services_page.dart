@@ -4,8 +4,7 @@ import 'package:app_gest_lavage/presentation/providers/service_management_contro
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/utils/app_colors.dart';
-
+import '../../../core/widgets/washops_header.dart';
 
 class AdminServicesPage extends StatefulWidget {
   const AdminServicesPage({super.key});
@@ -35,52 +34,77 @@ class _AdminServicesPageState extends State<AdminServicesPage> {
     }
   }
 
+  // ✅ AJOUT : même logique que ClientServicesPage pour deviner icône/couleur via le nom
+  ({IconData icon, Color bg, Color fg}) _serviceVisual(String name) {
+    final n = name.toLowerCase();
+    if (n.contains('ceramic') || n.contains('céramique')) {
+      return (icon: Icons.shield, bg: WashTheme.navy, fg: Colors.white);
+    }
+    if (n.contains('premium') || n.contains('ultimate') || n.contains('detail')) {
+      return (
+        icon: Icons.auto_awesome,
+        bg: WashTheme.chipBlueBg,
+        fg: WashTheme.chipBlueText
+      );
+    }
+    if (n.contains('oil') || n.contains('huile') || n.contains('filtre')) {
+      return (icon: Icons.build, bg: const Color(0xFF1B4332), fg: Colors.white);
+    }
+    if (n.contains('interior') || n.contains('intérieur') ||
+        n.contains('sanitiz')) {
+      return (
+        icon: Icons.cleaning_services,
+        bg: WashTheme.chipGrayBg,
+        fg: WashTheme.chipGrayText
+      );
+    }
+    return (icon: Icons.local_car_wash, bg: WashTheme.navy, fg: Colors.white);
+  }
+
   Future<void> _showEditServiceDialog(
       BuildContext context, Service service) async {
     final nameController = TextEditingController(text: service.name);
     final descriptionController =
         TextEditingController(text: service.description);
-    final priceController =
-        TextEditingController(text: service.price.toString());
+    final priceController = TextEditingController(text: service.price.toString());
     final durationController =
         TextEditingController(text: service.duration.toString());
 
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Modifier le Service'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Modifier le Service',
+            style: TextStyle(color: WashTheme.navy, fontWeight: FontWeight.bold)),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(labelText: 'Nom'),
-              ),
-              TextField(
-                controller: descriptionController,
-                decoration: const InputDecoration(labelText: 'Description'),
-              ),
-              TextField(
-                controller: priceController,
-                decoration: const InputDecoration(labelText: 'Prix (UM)'),
-                keyboardType: TextInputType.number,
-              ),
-              TextField(
-                controller: durationController,
-                decoration: const InputDecoration(labelText: 'Durée (minutes)'),
-                keyboardType: TextInputType.number,
-              ),
+              _buildDialogField(nameController, 'Nom'),
+              const SizedBox(height: 12),
+              _buildDialogField(descriptionController, 'Description', maxLines: 2),
+              const SizedBox(height: 12),
+              _buildDialogField(priceController, 'Prix (UM)',
+                  keyboardType: TextInputType.number),
+              const SizedBox(height: 12),
+              _buildDialogField(durationController, 'Durée (minutes)',
+                  keyboardType: TextInputType.number),
             ],
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Annuler'),
+            child: const Text('Annuler',
+                style: TextStyle(color: WashTheme.textSecondary)),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: WashTheme.navy,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
             child: const Text('Enregistrer'),
           ),
         ],
@@ -99,21 +123,15 @@ class _AdminServicesPageState extends State<AdminServicesPage> {
         duration: int.tryParse(durationController.text),
       );
       if (mounted) {
-        if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Service mis à jour avec succès')),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                Provider.of<ServiceManagementController>(context, listen: false)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(success
+                ? 'Service mis à jour avec succès'
+                : Provider.of<ServiceManagementController>(context, listen: false)
                         .error ??
-                    'Échec de la mise à jour du service',
-              ),
-            ),
-          );
-        }
+                    'Échec de la mise à jour du service'),
+          ),
+        );
       }
     }
   }
@@ -127,39 +145,38 @@ class _AdminServicesPageState extends State<AdminServicesPage> {
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Ajouter un Service'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Ajouter un Service',
+            style: TextStyle(color: WashTheme.navy, fontWeight: FontWeight.bold)),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(labelText: 'Nom'),
-              ),
-              TextField(
-                controller: descriptionController,
-                decoration: const InputDecoration(labelText: 'Description'),
-              ),
-              TextField(
-                controller: priceController,
-                decoration: const InputDecoration(labelText: 'Prix (UM)'),
-                keyboardType: TextInputType.number,
-              ),
-              TextField(
-                controller: durationController,
-                decoration: const InputDecoration(labelText: 'Durée (minutes)'),
-                keyboardType: TextInputType.number,
-              ),
+              _buildDialogField(nameController, 'Nom'),
+              const SizedBox(height: 12),
+              _buildDialogField(descriptionController, 'Description', maxLines: 2),
+              const SizedBox(height: 12),
+              _buildDialogField(priceController, 'Prix (UM)',
+                  keyboardType: TextInputType.number),
+              const SizedBox(height: 12),
+              _buildDialogField(durationController, 'Durée (minutes)',
+                  keyboardType: TextInputType.number),
             ],
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Annuler'),
+            child: const Text('Annuler',
+                style: TextStyle(color: WashTheme.textSecondary)),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: WashTheme.navy,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
             child: const Text('Ajouter'),
           ),
         ],
@@ -177,23 +194,39 @@ class _AdminServicesPageState extends State<AdminServicesPage> {
         duration: int.tryParse(durationController.text) ?? 0,
       );
       if (mounted) {
-        if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Service ajouté avec succès')),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                Provider.of<ServiceManagementController>(context, listen: false)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(success
+                ? 'Service ajouté avec succès'
+                : Provider.of<ServiceManagementController>(context, listen: false)
                         .error ??
-                    'Échec de l\'ajout du service',
-              ),
-            ),
-          );
-        }
+                    'Échec de l\'ajout du service'),
+          ),
+        );
       }
     }
+  }
+
+  Widget _buildDialogField(
+    TextEditingController controller,
+    String label, {
+    int maxLines = 1,
+    TextInputType? keyboardType,
+  }) {
+    return TextField(
+      controller: controller,
+      maxLines: maxLines,
+      keyboardType: keyboardType,
+      decoration: InputDecoration(
+        labelText: label,
+        filled: true,
+        fillColor: WashTheme.chipGrayBg,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide.none,
+        ),
+      ),
+    );
   }
 
   @override
@@ -209,62 +242,198 @@ class _AdminServicesPageState extends State<AdminServicesPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Gestion des Services'),
-        backgroundColor: AppColors.primary,
-        elevation: 0,
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: () => serviceController.loadServices(context),
-            tooltip: 'Rafraîchir',
+      backgroundColor: WashTheme.background,
+      body: SafeArea(
+        child: Column(
+          children: [
+            WashOpsHeader(
+              onAvatarTap: () {},
+              onNotificationTap: () {},
+            ),
+            Expanded(
+              child: serviceController.loading
+                  ? const Center(
+                      child: CircularProgressIndicator(color: WashTheme.navy))
+                  : serviceController.error != null &&
+                          serviceController.services.isEmpty
+                      ? Center(child: Text(serviceController.error!))
+                      : RefreshIndicator(
+                          onRefresh: () => serviceController.loadServices(context),
+                          child: ListView(
+                            padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+                            children: [
+                              Row(
+                                children: [
+                                  const Expanded(
+                                    child: WashSectionTitle(
+                                      title: 'Gérer les Services',
+                                      subtitle:
+                                          'Mettez à jour votre catalogue, vos tarifs et vos durées de lavage.',
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.refresh,
+                                        color: WashTheme.navy),
+                                    onPressed: () =>
+                                        serviceController.loadServices(context),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: WashTheme.chipBlueBg,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.inventory_2_outlined,
+                                        size: 18, color: WashTheme.chipBlueText),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      '${serviceController.services.length} services actifs',
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: WashTheme.chipBlueText,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 18),
+                              if (serviceController.services.isEmpty)
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 50),
+                                  child: Center(
+                                    child: Text(
+                                      'Aucun service trouvé',
+                                      style: TextStyle(
+                                          fontSize: 15,
+                                          color: WashTheme.textSecondary),
+                                    ),
+                                  ),
+                                )
+                              else
+                                ...serviceController.services
+                                    .map((service) => Padding(
+                                          padding:
+                                              const EdgeInsets.only(bottom: 12),
+                                          child: _buildServiceCard(service),
+                                        ))
+                                    .toList(),
+                              const SizedBox(height: 12),
+                              Center(
+                                child: Column(
+                                  children: [
+                                    Icon(Icons.auto_awesome,
+                                        size: 22, color: Colors.grey[400]),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      'FIN DU CATALOGUE',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        letterSpacing: 1,
+                                        color: Colors.grey[400],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+            ),
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: WashTheme.navy,
+        onPressed: () => _showAddServiceDialog(context),
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
+    );
+  }
+
+  Widget _buildServiceCard(Service service) {
+    final visual = _serviceVisual(service.name);
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: WashTheme.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      body: serviceController.loading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppColors.primary))
-          : serviceController.error != null &&
-                  serviceController.services.isEmpty
-              ? Center(child: Text(serviceController.error!))
-              : serviceController.services.isEmpty
-                  ? const Center(child: Text('Aucun service trouvé'))
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(16.0),
-                      itemCount: serviceController.services.length,
-                      itemBuilder: (context, index) {
-                        final service = serviceController.services[index];
-                        return Card(
-                          elevation: 4,
-                          margin: const EdgeInsets.symmetric(vertical: 8),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                          child: ListTile(
-                            leading: const Icon(Icons.build,
-                                color: AppColors.primary),
-                            title: Text(
-                              service.name,
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            subtitle: Text(
-                              'Prix: ${service.price} UM\nDurée: ${service.duration} min\n${service.description ?? ''}',
-                            ),
-                            trailing: IconButton(
-                              icon: const Icon(Icons.edit,
-                                  color: AppColors.primary),
-                              onPressed: () =>
-                                  _showEditServiceDialog(context, service),
-                            ),
-                          ),
-                        );
-                      },
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: visual.bg,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            alignment: Alignment.center,
+            child: Icon(visual.icon, color: visual.fg, size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        service.name,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: WashTheme.navy,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddServiceDialog(context),
-        backgroundColor: AppColors.primary,
-        child: const Icon(Icons.add),
+                    const SizedBox(width: 8),
+                    WashStatusChip(
+                      label: '${service.price} UM • ${service.duration} min',
+                      background: WashTheme.chipGreenBg,
+                      textColor: WashTheme.chipGreenText,
+                    ),
+                  ],
+                ),
+                if (service.description != null &&
+                    service.description!.trim().isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    service.description!,
+                    style: const TextStyle(
+                        fontSize: 12.5, color: WashTheme.textSecondary),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.edit_outlined, color: WashTheme.navy, size: 19),
+            onPressed: () => _showEditServiceDialog(context, service),
+          ),
+        ],
       ),
     );
   }

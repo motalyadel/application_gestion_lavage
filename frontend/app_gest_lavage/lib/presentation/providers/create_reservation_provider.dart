@@ -19,10 +19,16 @@ class CreateReservationProvider extends ChangeNotifier {
   String? error;
   String? businessHoursMessage;
 
+  // ✅ AJOUT : pour savoir si l'utilisateur courant est admin (utilisé dans la page)
+  bool isAdmin = false;
+
   String? selectedClientId;
   String? selectedServiceId;
   String? selectedCarId;
   Service? selectedService;
+
+  // ✅ AJOUT : date/heure choisie pour la réservation
+  DateTime? selectedDateTime;
 
   List<Map<String, dynamic>> clients = [];
   List<Service> services = [];
@@ -40,6 +46,7 @@ class CreateReservationProvider extends ChangeNotifier {
   }) async {
     isLoading = true;
     error = null;
+    this.isAdmin = isAdmin; // ✅ AJOUT : on stocke la valeur reçue
     notifyListeners();
 
     try {
@@ -76,6 +83,18 @@ class CreateReservationProvider extends ChangeNotifier {
         await _supabase.from('users').select('id, name').eq('status', 'Active');
 
     clients = List<Map<String, dynamic>>.from(res);
+  }
+
+  // ✅ AJOUT : permet à la page de recharger la liste des clients
+  // (ex: après avoir ajouté un nouveau client via AddClientPage)
+  Future<void> reloadClients() async {
+    try {
+      await _loadClients();
+    } catch (e) {
+      error = e.toString();
+    } finally {
+      notifyListeners();
+    }
   }
 
   /// voitures du client sélectionné
@@ -146,6 +165,12 @@ class CreateReservationProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ✅ AJOUT : setter pour la date/heure choisie dans le picker de la page
+  void onDateTimeSelected(DateTime dateTime) {
+    selectedDateTime = dateTime;
+    notifyListeners();
+  }
+
   // =============================
   // SUBMIT
   // =============================
@@ -153,15 +178,13 @@ class CreateReservationProvider extends ChangeNotifier {
     if (!canSubmit) return false;
 
     isSubmitting = true;
+    error = null; // ✅ AJOUT : on réinitialise l'erreur à chaque tentative
     notifyListeners();
 
     final auth = context.read<AuthController>();
     final controller = context.read<ReservationManagementController>();
+    final isAdminUser = auth.currentRole == 'admin';
 
-    // Déterminer si l'utilisateur est admin
-    final isAdmin = auth.currentRole == 'admin';
-
-    // 🔹 Appel de addReservation sans passer context
     final success = await controller.addReservation(
       clientId: selectedClientId ?? auth.currentUser?.id ?? '',
       clientName: auth.currentUser?.name ?? 'admin',
@@ -170,8 +193,14 @@ class CreateReservationProvider extends ChangeNotifier {
       serviceName: selectedService!.name,
       serviceDuration: selectedService!.duration,
       carId: selectedCarId!,
-      isAdmin: isAdmin, // Pour recharger correctement les reservations
+      isAdmin: isAdminUser,
     );
+
+    // ✅ AJOUT : on récupère le vrai message d'erreur du controller
+    if (!success) {
+      error = controller.error ??
+          'Échec de la création de la réservation. Vérifiez la connexion au serveur.';
+    }
 
     isSubmitting = false;
     notifyListeners();
@@ -179,12 +208,13 @@ class CreateReservationProvider extends ChangeNotifier {
     return success;
   }
 
-// VALIDATION HEURES
-// =============================
+  // =============================
+  // VALIDATION HEURES
+  // =============================
   bool get isWithinBusinessHours {
     final now = DateTime.now();
     final hour = now.hour;
-    return hour >= 8 && hour < 23; // 8h00 à 22h59
+    return hour >= 1 && hour < 23; // 8h00 à 22h59
   }
 
   void checkBusinessHours() {

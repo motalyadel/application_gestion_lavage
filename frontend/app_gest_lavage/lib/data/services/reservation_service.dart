@@ -50,7 +50,7 @@ class ReservationService {
       final query = clientSpb
           .from('reservations')
           .select(
-              'id, client_id, service_id, car_id, position, expected_time, status, created_at, car:cars(id, user_id, marque, modele, immatriculation, created_at, updated_at ), service:services(id, name, price, duration)')
+              'id, client_id, service_id, car_id, position, expected_time, status, created_at, started_at, car:cars(id, user_id, marque, modele, immatriculation, created_at, updated_at ), service:services(id, name, price, duration)')
           .gte('created_at',
               startOfDay.toIso8601String()) // À partir de 00:00 aujourd'hui
           .lt('created_at', endOfDay.toIso8601String()) // Avant 00:00 demain

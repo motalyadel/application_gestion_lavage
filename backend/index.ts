@@ -24,7 +24,13 @@ interface SupabaseUser {
   [key: string]: any;
 }
 
-const app = new Elysia();
+const app = new Elysia()
+
+.use(cors({
+    origin: true, // accepte toutes les origines (dev)
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning'],
+  }))
 
 //  Login
 app

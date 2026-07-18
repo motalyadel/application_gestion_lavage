@@ -6,9 +6,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class CarService {
   final clientSpb = Supabase.instance.client;
+
+  // ✅ MODIFIÉ : utilise _baseUrl qui détecte Android vs iOS automatiquement
   final apiFetcher = ApiFetcher(
     accessToken: Supabase.instance.client.auth.currentSession?.accessToken,
-    baseUrl: 'http://10.0.2.2:3000',
+    baseUrl: ApiFetcher.platformBaseUrl, // ✅ plus de 10.0.2.2 en dur
   );
 
   Future<List<Car>> getCars({bool isAdmin = false}) async {
@@ -169,7 +171,7 @@ class CarService {
       // Update apiFetcher with latest token
       final apiFetcher = ApiFetcher(
         accessToken: Supabase.instance.client.auth.currentSession?.accessToken,
-        baseUrl: 'http://10.0.2.2:3000', // Update to 'https://xxxx.ngrok.io' if using ngrok
+        baseUrl: ApiFetcher.platformBaseUrl, // Update to 'https://xxxx.ngrok.io' if using ngrok
       );
 
       // Call the POST /delete-car endpoint

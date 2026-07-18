@@ -1,13 +1,28 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:cross_file/cross_file.dart' as cross_file; // Unified import
 import 'package:dio/dio.dart' show Dio, DioException;
 import 'package:dio/io.dart';
 
 class ApiFetcher {
-  final String baseUrl = "http://10.0.2.2:3000";
+  // détecte automatiquement la plateforme
+  static String get platformBaseUrl {
+    if (Platform.isAndroid) {
+      return "http://10.0.2.2:3000";
+    } else {
+      return "http://localhost:3000";
+    }
+  }
+
+  final String baseUrl;
   String? accessToken;
   String? refreshToken;
-  ApiFetcher({this.accessToken, this.refreshToken, required String baseUrl});
+
+  ApiFetcher({
+    this.accessToken,
+    this.refreshToken,
+    required String baseUrl,
+  }) : baseUrl = baseUrl;
   Future<FetcherResponse> get(String path) async {
     final dio = Dio();
     dio

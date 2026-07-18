@@ -9,12 +9,14 @@ class ReservationService {
   final SupabaseClient clientSpb = Supabase.instance.client;
   // final String _n8nBaseUrl = 'http://localhost:5678/webhook-test';
   // final String _n8nBaseUrlPrd = 'http://localhost:5678/webhook';
-  final String _n8nBaseUrlPrd = 'http://10.0.2.2:5678/webhook';
+  // final String _n8nBaseUrlPrd = 'http://10.0.2.2:5678/webhook';
+  final String _n8nBaseUrlPrdcfd = 'https://motalyn8n.cfd/webhook';
   // final String _n8nBaseUrl = 'http://10.0.2.2:5678/webhook-test';
+  // final String _n8nBaseUrlcfd = 'https://motalyn8n.cfd/webhook-test';
 
   // Future<List<Reservation>> getReservations({required bool isAdmin}) async {
   //   try {
-  //     final userId = clientSpb.auth.currentUser?.id;
+  //     final userId = clientSpb.auth.currentUser?.id;R
   //     print('Fetching reservations for user: $userId, isAdmin: $isAdmin');
   //     final query = clientSpb
   //         .from('reservations')
@@ -84,7 +86,7 @@ class ReservationService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$_n8nBaseUrlPrd/create-reservation'),
+        Uri.parse('$_n8nBaseUrlPrdcfd/create-reservation'),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -117,7 +119,7 @@ class ReservationService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$_n8nBaseUrlPrd/start-lavage'),
+        Uri.parse('$_n8nBaseUrlPrdcfd/start-lavage'),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -143,7 +145,7 @@ class ReservationService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$_n8nBaseUrlPrd/finish-lavage'),
+        Uri.parse('$_n8nBaseUrlPrdcfd/finish-lavage'),
         headers: {
           'Content-Type': 'application/json',
         },

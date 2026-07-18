@@ -371,7 +371,7 @@ class ClientService extends BaseService {
     clientSpb = Supabase.instance.client;
     apiFetcher = ApiFetcher(
       accessToken: clientSpb.auth.currentSession?.accessToken,
-      baseUrl: 'http://10.0.2.2:3000', // Match your backend URL
+      baseUrl: ApiFetcher.platformBaseUrl, // Match your backend URL
     );
   }
 

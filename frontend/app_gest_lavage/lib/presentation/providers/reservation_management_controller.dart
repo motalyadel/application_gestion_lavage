@@ -157,4 +157,34 @@ class ReservationManagementController extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  // ✅ AJOUT : annuler une réservation en attente
+Future<bool> cancelReservation({
+  required String reservationId,
+  required bool isAdmin,
+}) async {
+  loading = true;
+  error = null;
+  notifyListeners();
+
+  try {
+    print('🚫 [Controller] Annulation réservation: $reservationId');
+    final success =
+        await _service.cancelReservation(reservationId: reservationId);
+
+    if (!success) throw Exception('Échec de l\'annulation');
+
+    // ✅ Recharge la liste — la réservation annulée disparaît automatiquement
+    // (getReservationsJr filtre déjà sur waiting + in_progress uniquement)
+    await loadReservationsJr(isAdmin: isAdmin);
+    return true;
+  } catch (e) {
+    print('❌ [Controller] cancelReservation() failed: $e');
+    error = 'Échec de l\'annulation de la réservation';
+    return false;
+  } finally {
+    loading = false;
+    notifyListeners();
+  }
+}
 }

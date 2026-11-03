@@ -40,38 +40,44 @@ class ReservationService {
   // }
 
   Future<List<Reservation>> getReservationsJr({required bool isAdmin}) async {
-    try {
-      final userId = clientSpb.auth.currentUser?.id;
-      print('Fetching reservations for user: $userId, isAdmin: $isAdmin');
+  try {
+    final userId = clientSpb.auth.currentUser?.id;
+    print('Fetching reservations for user: $userId, isAdmin: $isAdmin');
 
-      // Filtre pour aujourd'hui seulement
-      final now = DateTime.now();
-      final startOfDay = DateTime(now.year, now.month, now.day);
-      final endOfDay = startOfDay.add(const Duration(days: 1));
+    final now = DateTime.now();
+    final startOfDay = DateTime(now.year, now.month, now.day);
+    final endOfDay = startOfDay.add(const Duration(days: 1));
 
-      final query = clientSpb
-          .from('reservations')
-          .select(
-              'id, client_id, service_id, car_id, position, expected_time, status, created_at, started_at, car:cars(id, user_id, marque, modele, immatriculation, created_at, updated_at ), service:services(id, name, price, duration)')
-          .gte('created_at',
-              startOfDay.toIso8601String()) // À partir de 00:00 aujourd'hui
-          .lt('created_at', endOfDay.toIso8601String()) // Avant 00:00 demain
-          .order('created_at', ascending: true);
+    // ✅ FIX : tous les filtres (.eq, .gte, .lt, .inFilter) AVANT .order()
+    var query = clientSpb
+        .from('reservations')
+        .select(
+            'id, client_id, service_id, car_id, position, expected_time, status, started_at, machine_id, created_at, car:cars(id, user_id, marque, modele, immatriculation, created_at, updated_at), service:services(id, name, price, duration)')
+        .gte('created_at', startOfDay.toIso8601String())
+        .lt('created_at', endOfDay.toIso8601String())
+        .inFilter('status', ['waiting', 'in_progress']);
 
-      print('Executing query: ${query.toString()}');
-      final response = await query;
-      print('Reservations response raw: $response');
-
-      if (response.isEmpty) {
-        print('No reservations found for today');
-      }
-
-      return response.map((map) => Reservation.fromMap(map)).toList();
-    } catch (e) {
-      print('getReservations() failed with exception: $e ');
-      rethrow;
+    // ✅ filtre client AVANT order (encore dans la zone PostgrestFilterBuilder)
+    if (!isAdmin) {
+      if (userId == null) throw Exception('Utilisateur non connecté');
+      query = query.eq('client_id', userId);
     }
+
+    // ✅ .order() en dernier (retourne PostgrestTransformBuilder)
+    final response = await query.order('position', ascending: true);
+
+    print('Reservations response raw: $response');
+
+    if (response.isEmpty) {
+      print('No active reservations found for today');
+    }
+
+    return response.map((map) => Reservation.fromMap(map)).toList();
+  } catch (e) {
+    print('getReservationsJr() failed: $e');
+    rethrow;
   }
+}
 
   Future<bool> addReservation({
     // required BuildContext context,
@@ -86,7 +92,7 @@ class ReservationService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$_n8nBaseUrlPrdcfd/create-reservation'),
+        Uri.parse('$_n8nBaseUrlPrdcfd/create-reservation02'),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -119,7 +125,7 @@ class ReservationService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$_n8nBaseUrlPrdcfd/start-lavage'),
+        Uri.parse('$_n8nBaseUrlPrdcfd/start-lavage01'),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -226,4 +232,23 @@ class ReservationService {
       return false;
     }
   }
+
+  // Seules les réservations "waiting" peuvent être annulées
+Future<bool> cancelReservation({required String reservationId}) async {
+  try {
+    print('🚫 [Service] Annulation réservation: $reservationId');
+    final success = await updateReservation(
+      id: reservationId,
+      status: 'cancelled',
+    );
+    print(success
+        ? '✅ [Service] Réservation annulée'
+        : '❌ [Service] Échec annulation');
+    return success;
+  } catch (e) {
+    print('❌ [Service] cancelReservation() failed: $e');
+    return false;
+  }
+}
+
 }

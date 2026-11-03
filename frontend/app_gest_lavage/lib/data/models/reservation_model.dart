@@ -11,7 +11,8 @@ class Reservation extends Equatable {
   final DateTime? expectedTime;
   final String status;
   final DateTime createdAt;
-  final DateTime? startedAt; // ✅ AJOUT : heure de début réelle du lavage
+  final DateTime? startedAt;  // ✅ AJOUT : heure de début réelle (set par n8n)
+  final int? machineId;       // ✅ AJOUT : numéro de machine (set par n8n)
   final Service? service;
   final Car? car;
 
@@ -24,7 +25,8 @@ class Reservation extends Equatable {
     this.expectedTime,
     required this.status,
     required this.createdAt,
-    this.startedAt, // ✅ AJOUT
+    this.startedAt,
+    this.machineId,
     this.service,
     this.car,
   });
@@ -41,9 +43,12 @@ class Reservation extends Equatable {
           : null,
       status: map['status'] as String,
       createdAt: DateTime.parse(map['created_at'] as String),
-      // ✅ AJOUT : parsing de started_at (null si le lavage n'a pas démarré)
       startedAt: map['started_at'] != null
           ? DateTime.parse(map['started_at'])
+          : null,
+      // ✅ AJOUT : machine_id peut être int ou string selon Supabase
+      machineId: map['machine_id'] != null
+          ? int.tryParse(map['machine_id'].toString())
           : null,
       service: map['service'] != null ? Service.fromMap(map['service']) : null,
       car: map['car'] != null ? Car.fromMap(map['car']) : null,
@@ -57,14 +62,15 @@ class Reservation extends Equatable {
       'service_id': serviceId,
       'car_id': carId,
       'position': position,
-      'expected_time': expectedTime,
+      'expected_time': expectedTime?.toIso8601String(),
       'status': status,
       'created_at': createdAt.toIso8601String(),
-      'started_at': startedAt?.toIso8601String(), // ✅ AJOUT
+      'started_at': startedAt?.toIso8601String(),
+      'machine_id': machineId,
     };
   }
 
   @override
   List<Object?> get props =>
-      [id, clientId, serviceId, carId, status, createdAt, startedAt, service];
+      [id, clientId, serviceId, carId, status, createdAt, startedAt, machineId, service];
 }

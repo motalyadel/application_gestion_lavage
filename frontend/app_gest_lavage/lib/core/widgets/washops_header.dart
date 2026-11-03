@@ -3,22 +3,50 @@
 import 'package:app_gest_lavage/presentation/providers/auth_controller.dart';
 import 'package:flutter/material.dart';
 
+import 'package:flutter/material.dart';
+
 class WashTheme {
+  // Couleurs principales
   static const Color navy = Color(0xFF0E1B3D);
   static const Color navyDark = Color(0xFF0A1330);
+
   static const Color background = Color(0xFFF6F7FB);
   static const Color cardBackground = Colors.white;
+
+  static const Color textPrimary = Color(0xFF111827);
   static const Color textSecondary = Color(0xFF6B7280);
+
   static const Color border = Color(0xFFE5E7EB);
 
+  // Couleurs d'action
+  static const Color actionSuccess = Color(0xFF16A34A);
+  static const Color actionDanger = Color(0xFFDC2626);
+
+  // Chips
   static const Color chipBlueBg = Color(0xFFE0EAFE);
   static const Color chipBlueText = Color(0xFF1D4ED8);
+
   static const Color chipGreenBg = Color(0xFFDCFCE7);
   static const Color chipGreenText = Color(0xFF15803D);
+
   static const Color chipGrayBg = Color(0xFFE9ECF2);
   static const Color chipGrayText = Color(0xFF4B5563);
+
   static const Color chipOrangeBg = Color(0xFFFEF3C7);
   static const Color chipOrangeText = Color(0xFFB45309);
+
+  // Rayons
+  static const double radiusCard = 18;
+  static const double radiusButton = 12;
+
+  // Ombres
+  static const List<BoxShadow> cardShadow = [
+    BoxShadow(
+      color: Color(0x14000000),
+      blurRadius: 16,
+      offset: Offset(0, 8),
+    ),
+  ];
 }
 
 class WashOpsHeader extends StatelessWidget {
@@ -195,6 +223,42 @@ class WashStatusChip extends StatelessWidget {
     required this.textColor,
     this.icon,
   });
+
+  factory WashStatusChip.fromStatus(String status) {
+    switch (status) {
+      case 'waiting':
+        return const WashStatusChip(
+          label: 'En attente',
+          background: WashTheme.chipOrangeBg,
+          textColor: WashTheme.chipOrangeText,
+          icon: Icons.schedule,
+        );
+
+      case 'in_progress':
+        return const WashStatusChip(
+          label: 'En cours',
+          background: WashTheme.chipBlueBg,
+          textColor: WashTheme.chipBlueText,
+          icon: Icons.local_car_wash,
+        );
+
+      case 'done':
+        return const WashStatusChip(
+          label: 'Terminé',
+          background: WashTheme.chipGreenBg,
+          textColor: WashTheme.chipGreenText,
+          icon: Icons.check_circle,
+        );
+
+      default:
+        return const WashStatusChip(
+          label: 'Inconnu',
+          background: WashTheme.chipGrayBg,
+          textColor: WashTheme.chipGrayText,
+          icon: Icons.help_outline,
+        );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
